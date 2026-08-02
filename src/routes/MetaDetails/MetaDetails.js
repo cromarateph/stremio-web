@@ -220,7 +220,6 @@ const MetaDetails = () => {
                                                 allow={'autoplay; encrypted-media; fullscreen; picture-in-picture'}
                                                 allowFullScreen={true}
                                                 referrerPolicy={'no-referrer'}
-                                                sandbox={'allow-forms allow-presentation allow-same-origin allow-scripts'}
                                             />
                                         </div>
                                         :
