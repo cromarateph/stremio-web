@@ -162,6 +162,19 @@ const MetaDetails = () => {
         metaDetails.metaItem.content.content.background.length > 0
     ), [metaPath, metaDetails]);
     const originPath = React.useMemo(() => getStoredOrigin(), [getStoredOrigin]);
+    const vidkingPlayer = vidkingUrl !== null ?
+        <div className={classnames(styles['vidking-player'], { [styles['movie-player']]: type === 'movie' }, 'animation-fade-in')}>
+            <iframe
+                className={styles['vidking-frame']}
+                src={vidkingUrl}
+                title={`Watch ${vidkingVideo?.title ?? metaDetails.metaItem.content.content.name} on Vidking`}
+                allow={'autoplay; encrypted-media; fullscreen; picture-in-picture'}
+                allowFullScreen={true}
+                referrerPolicy={'no-referrer'}
+            />
+        </div>
+        :
+        null;
 
     useContentGamepadNavigation(contentRef, GAMEPAD_HANDLER_ID);
     return (
@@ -211,17 +224,8 @@ const MetaDetails = () => {
                                 metaDetails.metaItem.content.type === 'Loading' ?
                                     <MetaPreview.Placeholder className={styles['meta-preview']} />
                                     :
-                                    vidkingUrl !== null ?
-                                        <div className={classnames(styles['vidking-player'], 'animation-fade-in')}>
-                                            <iframe
-                                                className={styles['vidking-frame']}
-                                                src={vidkingUrl}
-                                                title={`Watch ${vidkingVideo?.title ?? metaDetails.metaItem.content.content.name} on Vidking`}
-                                                allow={'autoplay; encrypted-media; fullscreen; picture-in-picture'}
-                                                allowFullScreen={true}
-                                                referrerPolicy={'no-referrer'}
-                                            />
-                                        </div>
+                                    vidkingUrl !== null && type !== 'movie' ?
+                                        vidkingPlayer
                                         :
                                         <MetaPreview
                                             className={classnames(styles['meta-preview'], 'animation-fade-in')}
@@ -246,7 +250,8 @@ const MetaDetails = () => {
                                             ratingInfo={metaDetails.ratingInfo}
                                         />
                 }
-                {vidkingUrl === null ? <div className={styles['spacing']} /> : null}
+                {vidkingUrl === null || type === 'movie' ? <div className={styles['spacing']} /> : null}
+                {type === 'movie' ? vidkingPlayer : null}
                 {
                     type === 'movie' ?
                         null

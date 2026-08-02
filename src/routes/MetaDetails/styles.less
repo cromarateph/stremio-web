@@ -102,6 +102,14 @@
                 height: 100%;
                 border: 0;
             }
+
+            &.movie-player {
+                flex: 0 1 48%;
+                align-self: flex-start;
+                max-width: 52rem;
+                aspect-ratio: 16 / 9;
+                margin: 1rem 1rem 1rem 2rem;
+            }
         }
 
         .spacing {
@@ -153,6 +161,11 @@
                 width: calc(100% - 2rem);
                 aspect-ratio: 16 / 9;
                 margin: 0 1rem 1rem;
+
+                &.movie-player {
+                    max-width: none;
+                    margin: 0 1rem 1rem;
+                }
             }
 
             .videos-list, .streams-list {
