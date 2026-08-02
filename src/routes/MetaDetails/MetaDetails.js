@@ -11,6 +11,7 @@ const { useNavigateWithOrigin } = require('stremio-router');
 const { HorizontalNavBar, DelayedRenderer, Image, MetaPreview } = require('stremio/components');
 const StreamsList = require('./StreamsList');
 const VideosList = require('./VideosList');
+const getVidkingStream = require('./StreamsList/getVidkingStream');
 const useMetaDetails = require('./useMetaDetails');
 const useSeason = require('./useSeason');
 const styles = require('./styles');
@@ -50,6 +51,46 @@ const MetaDetails = () => {
             :
             null;
     }, [metaDetails.metaItem, streamPath]);
+    const [vidkingSelection, setVidkingSelection] = React.useState(null);
+    const selectVidkingVideo = React.useCallback((video) => {
+        setVidkingSelection({ type, id, season, video });
+    }, [type, id, season]);
+    const selectedVidkingVideo = vidkingSelection?.type === type &&
+        vidkingSelection?.id === id &&
+        vidkingSelection?.season === season ?
+        vidkingSelection.video
+        :
+        null;
+    const vidkingVideo = video ?? selectedVidkingVideo;
+    const vidkingMetaId = metaDetails.metaItem?.content.type === 'Ready' ?
+        metaDetails.metaItem.content.content.id
+        :
+        null;
+    const [vidkingUrl, setVidkingUrl] = React.useState(null);
+    React.useEffect(() => {
+        const controller = new AbortController();
+        setVidkingUrl(null);
+
+        if (vidkingVideo === null) {
+            return () => controller.abort();
+        }
+
+        getVidkingStream({
+            metaId: vidkingMetaId,
+            type,
+            season: vidkingVideo.season,
+            episode: vidkingVideo.episode,
+            signal: controller.signal
+        }).then((stream) => {
+            setVidkingUrl(stream?.deepLinks.externalPlayer.web ?? null);
+        }).catch((error) => {
+            if (error.name !== 'AbortError') {
+                setVidkingUrl(null);
+            }
+        });
+
+        return () => controller.abort();
+    }, [vidkingMetaId, type, vidkingVideo?.season, vidkingVideo?.episode]);
     const addToLibrary = React.useCallback(() => {
         if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') {
             return;
@@ -170,7 +211,19 @@ const MetaDetails = () => {
                                 metaDetails.metaItem.content.type === 'Loading' ?
                                     <MetaPreview.Placeholder className={styles['meta-preview']} />
                                     :
-                                    <React.Fragment>
+                                    vidkingUrl !== null ?
+                                        <div className={classnames(styles['vidking-player'], 'animation-fade-in')}>
+                                            <iframe
+                                                className={styles['vidking-frame']}
+                                                src={vidkingUrl}
+                                                title={`Watch ${vidkingVideo?.title ?? metaDetails.metaItem.content.content.name} on Vidking`}
+                                                allow={'autoplay; encrypted-media; fullscreen; picture-in-picture'}
+                                                allowFullScreen={true}
+                                                referrerPolicy={'no-referrer'}
+                                                sandbox={'allow-forms allow-presentation allow-same-origin allow-scripts'}
+                                            />
+                                        </div>
+                                        :
                                         <MetaPreview
                                             className={classnames(styles['meta-preview'], 'animation-fade-in')}
                                             name={metaDetails.metaItem.content.content.name}
@@ -193,9 +246,8 @@ const MetaDetails = () => {
                                             metaId={metaDetails.metaItem.content.content.id}
                                             ratingInfo={metaDetails.ratingInfo}
                                         />
-                                    </React.Fragment>
                 }
-                <div className={styles['spacing']} />
+                {vidkingUrl === null ? <div className={styles['spacing']} /> : null}
                 {
                     streamPath !== null ?
                         <StreamsList
@@ -203,12 +255,6 @@ const MetaDetails = () => {
                             streams={metaDetails.streams}
                             video={video}
                             type={streamPath.type}
-                            metaId={
-                                metaDetails.metaItem !== null && metaDetails.metaItem.content.type === 'Ready' ?
-                                    metaDetails.metaItem.content.content.id
-                                    :
-                                    null
-                            }
                             onEpisodeSearch={handleEpisodeSearch}
                         />
                         :
@@ -218,8 +264,9 @@ const MetaDetails = () => {
                                 metaItem={metaDetails.metaItem}
                                 libraryItem={metaDetails.libraryItem}
                                 season={season}
-                                selectedVideoId={metaDetails.libraryItem?.state?.video_id}
+                                selectedVideoId={vidkingVideo?.id ?? metaDetails.libraryItem?.state?.video_id}
                                 seasonOnSelect={seasonOnSelect}
+                                onVideoSelect={selectVidkingVideo}
                                 toggleNotifications={toggleNotifications}
                             />
                             :

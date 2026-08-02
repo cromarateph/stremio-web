@@ -87,6 +87,23 @@
             padding-left: max(1rem, calc(4rem - var(--safe-area-inset-left)));
         }
 
+        .vidking-player {
+            flex: 1 1 auto;
+            align-self: stretch;
+            min-width: 0;
+            margin: 0 1rem 1rem;
+            overflow: hidden;
+            border-radius: var(--border-radius);
+            background-color: #000;
+
+            .vidking-frame {
+                display: block;
+                width: 100%;
+                height: 100%;
+                border: 0;
+            }
+        }
+
         .spacing {
             flex: 1;
         }
@@ -130,6 +147,12 @@
 
             .meta-preview {
                 padding: 0 1.5rem 2rem;
+            }
+
+            .vidking-player {
+                width: calc(100% - 2rem);
+                aspect-ratio: 16 / 9;
+                margin: 0 1rem 1rem;
             }
 
             .videos-list, .streams-list {

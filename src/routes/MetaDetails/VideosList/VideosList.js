@@ -13,7 +13,7 @@ const styles = require('./styles');
 
 let savedScrollTop = 0;
 
-const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, selectedVideoId, toggleNotifications }) => {
+const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, selectedVideoId, onVideoSelect, toggleNotifications }) => {
     const core = useCore();
     const profile = useProfile();
     const showNotificationsToggle = React.useMemo(() => {
@@ -78,6 +78,18 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
     const saveScrollPosition = React.useCallback(() => {
         savedScrollTop = videosContainerRef.current?.scrollTop ?? 0;
     }, []);
+    const selectVideo = React.useCallback((video) => {
+        saveScrollPosition();
+        if (typeof onVideoSelect === 'function') {
+            onVideoSelect(video);
+        }
+    }, [saveScrollPosition, onVideoSelect]);
+
+    React.useEffect(() => {
+        if (typeof onVideoSelect === 'function' && videosForSeason.length > 0) {
+            onVideoSelect(videosForSeason[0]);
+        }
+    }, [videosForSeason, onVideoSelect]);
 
     // Restore scroll on mount (before paint), consume immediately
     React.useLayoutEffect(() => {
@@ -204,11 +216,11 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
                                                 upcoming={video.upcoming}
                                                 watched={video.watched}
                                                 progress={video.progress}
-                                                deepLinks={video.deepLinks}
+                                                deepLinks={typeof onVideoSelect === 'function' ? undefined : video.deepLinks}
                                                 scheduled={video.scheduled}
                                                 seasonWatched={seasonWatched}
                                                 selected={video.id === selectedVideoId}
-                                                onSelect={saveScrollPosition}
+                                                onSelect={() => selectVideo(video)}
                                                 onMarkVideoAsWatched={onMarkVideoAsWatched}
                                                 onMarkSeasonAsWatched={onMarkSeasonAsWatched}
                                             />
@@ -228,6 +240,7 @@ VideosList.propTypes = {
     season: PropTypes.number,
     selectedVideoId: PropTypes.string,
     seasonOnSelect: PropTypes.func,
+    onVideoSelect: PropTypes.func,
     toggleNotifications: PropTypes.func,
 };
 
