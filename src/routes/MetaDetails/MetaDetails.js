@@ -71,15 +71,15 @@ const MetaDetails = () => {
         const controller = new AbortController();
         setVidkingUrl(null);
 
-        if (vidkingVideo === null) {
+        if (vidkingMetaId === null || type !== 'movie' && vidkingVideo === null) {
             return () => controller.abort();
         }
 
         getVidkingStream({
             metaId: vidkingMetaId,
             type,
-            season: vidkingVideo.season,
-            episode: vidkingVideo.episode,
+            season: vidkingVideo?.season,
+            episode: vidkingVideo?.episode,
             signal: controller.signal
         }).then((stream) => {
             setVidkingUrl(stream?.deepLinks.externalPlayer.web ?? null);
@@ -249,28 +249,31 @@ const MetaDetails = () => {
                 }
                 {vidkingUrl === null ? <div className={styles['spacing']} /> : null}
                 {
-                    streamPath !== null ?
-                        <StreamsList
-                            className={styles['streams-list']}
-                            streams={metaDetails.streams}
-                            video={video}
-                            type={streamPath.type}
-                            onEpisodeSearch={handleEpisodeSearch}
-                        />
+                    type === 'movie' ?
+                        null
                         :
-                        metaPath !== null ?
-                            <VideosList
-                                className={styles['videos-list']}
-                                metaItem={metaDetails.metaItem}
-                                libraryItem={metaDetails.libraryItem}
-                                season={season}
-                                selectedVideoId={vidkingVideo?.id ?? metaDetails.libraryItem?.state?.video_id}
-                                seasonOnSelect={seasonOnSelect}
-                                onVideoSelect={selectVidkingVideo}
-                                toggleNotifications={toggleNotifications}
+                        streamPath !== null ?
+                            <StreamsList
+                                className={styles['streams-list']}
+                                streams={metaDetails.streams}
+                                video={video}
+                                type={streamPath.type}
+                                onEpisodeSearch={handleEpisodeSearch}
                             />
                             :
-                            null
+                            metaPath !== null ?
+                                <VideosList
+                                    className={styles['videos-list']}
+                                    metaItem={metaDetails.metaItem}
+                                    libraryItem={metaDetails.libraryItem}
+                                    season={season}
+                                    selectedVideoId={vidkingVideo?.id ?? metaDetails.libraryItem?.state?.video_id}
+                                    seasonOnSelect={seasonOnSelect}
+                                    onVideoSelect={selectVidkingVideo}
+                                    toggleNotifications={toggleNotifications}
+                                />
+                                :
+                                null
                 }
             </div>
         </div>
