@@ -11,6 +11,7 @@ const { useNavigateWithOrigin } = require('stremio-router');
 const { HorizontalNavBar, DelayedRenderer, Image, MetaPreview } = require('stremio/components');
 const StreamsList = require('./StreamsList');
 const VideosList = require('./VideosList');
+const VidkingPlayer = require('./VidkingPlayer');
 const getVidkingStream = require('./StreamsList/getVidkingStream');
 const useMetaDetails = require('./useMetaDetails');
 const useSeason = require('./useSeason');
@@ -163,16 +164,14 @@ const MetaDetails = () => {
     ), [metaPath, metaDetails]);
     const originPath = React.useMemo(() => getStoredOrigin(), [getStoredOrigin]);
     const vidkingPlayer = vidkingUrl !== null ?
-        <div className={classnames(styles['vidking-player'], { [styles['movie-player']]: type === 'movie' }, 'animation-fade-in')}>
-            <iframe
-                className={styles['vidking-frame']}
-                src={vidkingUrl}
-                title={`Watch ${vidkingVideo?.title ?? metaDetails.metaItem.content.content.name} on Vidking`}
-                allow={'autoplay; encrypted-media; fullscreen; picture-in-picture'}
-                allowFullScreen={true}
-                referrerPolicy={'no-referrer'}
-            />
-        </div>
+        <VidkingPlayer
+            className={classnames({ [styles['movie-player']]: type === 'movie' }, 'animation-fade-in')}
+            url={vidkingUrl}
+            title={`Watch ${vidkingVideo?.title ?? metaDetails.metaItem.content.content.name} on Vidking`}
+            metaId={vidkingMetaId}
+            season={vidkingVideo?.season}
+            episode={vidkingVideo?.episode}
+        />
         :
         null;
 
