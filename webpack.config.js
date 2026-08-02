@@ -231,6 +231,7 @@ module.exports = (env, argv) => ({
                 { from: 'assets/favicons', to: 'favicons' },
                 { from: 'assets/images', to: 'images' },
                 { from: 'assets/screenshots/*.webp', to: 'screenshots/[name][ext]' },
+                { from: 'assets/robots.txt', to: 'robots.txt' },
                 { from: '.well-known', to: '.well-known' },
                 { from: 'manifest.json', to: 'manifest.json' },
             ]
