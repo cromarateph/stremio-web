@@ -203,6 +203,12 @@ const MetaDetails = () => {
                             streams={metaDetails.streams}
                             video={video}
                             type={streamPath.type}
+                            metaId={
+                                metaDetails.metaItem !== null && metaDetails.metaItem.content.type === 'Ready' ?
+                                    metaDetails.metaItem.content.content.id
+                                    :
+                                    null
+                            }
                             onEpisodeSearch={handleEpisodeSearch}
                         />
                         :

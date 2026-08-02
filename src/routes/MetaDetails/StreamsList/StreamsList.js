@@ -13,10 +13,12 @@ const Stream = require('./Stream');
 const styles = require('./styles');
 const { usePlatform, useProfile } = require('stremio/common');
 const { default: SeasonEpisodePicker } = require('../EpisodePicker');
+const getVidkingStream = require('./getVidkingStream');
 
 const ALL_ADDONS_KEY = 'ALL';
+const VIDKING_ADDON_KEY = 'VIDKING';
 
-const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
+const StreamsList = ({ className, video, type, metaId, onEpisodeSearch, ...props }) => {
     const { t } = useTranslation();
     const core = useCore();
     const platform = usePlatform();
@@ -24,6 +26,23 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     const navigate = useNavigate();
     const streamsContainerRef = React.useRef(null);
     const [selectedAddon, setSelectedAddon] = React.useState(ALL_ADDONS_KEY);
+    const [vidkingStream, setVidkingStream] = React.useState(undefined);
+    React.useEffect(() => {
+        const controller = new AbortController();
+        setVidkingStream(undefined);
+        getVidkingStream({
+            metaId,
+            type,
+            season: video?.season,
+            episode: video?.episode,
+            signal: controller.signal
+        }).then(setVidkingStream).catch((error) => {
+            if (error.name !== 'AbortError') {
+                setVidkingStream(null);
+            }
+        });
+        return () => controller.abort();
+    }, [metaId, type, video?.season, video?.episode]);
     const onAddonSelected = React.useCallback((value) => {
         streamsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: platform.name === 'ios' ? 'smooth' : 'instant' });
         setSelectedAddon(value);
@@ -70,13 +89,16 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     }, [props.streams]);
     const filteredStreams = React.useMemo(() => {
         return selectedAddon === ALL_ADDONS_KEY ?
-            Object.values(streamsByAddon).map(({ streams }) => streams).flat(1)
+            [vidkingStream, ...Object.values(streamsByAddon).map(({ streams }) => streams).flat(1)].filter(Boolean)
             :
-            streamsByAddon[selectedAddon] ?
-                streamsByAddon[selectedAddon].streams
+            selectedAddon === VIDKING_ADDON_KEY ?
+                vidkingStream ? [vidkingStream] : []
                 :
-                [];
-    }, [streamsByAddon, selectedAddon]);
+                streamsByAddon[selectedAddon] ?
+                    streamsByAddon[selectedAddon].streams
+                    :
+                    [];
+    }, [streamsByAddon, selectedAddon, vidkingStream]);
     const selectableOptions = React.useMemo(() => {
         return {
             options: [
@@ -85,6 +107,11 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                     label: t('ALL_ADDONS'),
                     title: t('ALL_ADDONS')
                 },
+                ...(vidkingStream ? [{
+                    value: VIDKING_ADDON_KEY,
+                    label: vidkingStream.addonName,
+                    title: vidkingStream.addonName,
+                }] : []),
                 ...Object.keys(streamsByAddon).map((transportUrl) => ({
                     value: transportUrl,
                     label: streamsByAddon[transportUrl].addon.manifest.name,
@@ -94,7 +121,8 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
             value: selectedAddon,
             onSelect: onAddonSelected
         };
-    }, [streamsByAddon, selectedAddon]);
+    }, [streamsByAddon, selectedAddon, vidkingStream]);
+    const providerCount = Object.keys(streamsByAddon).length + (vidkingStream ? 1 : 0);
 
     const handleEpisodePicker = React.useCallback((season, episode) => {
         onEpisodeSearch(season, episode);
@@ -119,7 +147,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                         null
                 }
                 {
-                    Object.keys(streamsByAddon).length > 1 ?
+                    providerCount > 1 ?
                         <MultiselectMenu
                             {...selectableOptions}
                             className={styles['select-input-container']}
@@ -129,7 +157,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                 }
             </div>
             {
-                props.streams.length === 0 ?
+                props.streams.length === 0 && vidkingStream === null ?
                     <div className={styles['message-container']}>
                         {
                             type === 'series' ?
@@ -140,7 +168,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                         <div className={styles['label']}>{t('ERR_NO_ADDONS_FOR_STREAMS')}</div>
                     </div>
                     :
-                    props.streams.every((streams) => streams.content.type === 'Err') ?
+                    props.streams.every((streams) => streams.content.type === 'Err') && vidkingStream === null ?
                         <div className={styles['message-container']}>
                             {
                                 type === 'series' ?
@@ -219,6 +247,7 @@ StreamsList.propTypes = {
     streams: PropTypes.arrayOf(PropTypes.object).isRequired,
     video: PropTypes.object,
     type: PropTypes.string,
+    metaId: PropTypes.string,
     onEpisodeSearch: PropTypes.func
 };
 
