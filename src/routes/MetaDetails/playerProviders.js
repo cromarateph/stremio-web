@@ -2,22 +2,6 @@
 
 const normalizeTitle = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
-const withWyzieSubtitle = (url, subtitleUrl, subtitleBaseUrl) => {
-    const playerUrl = new URL(url);
-    playerUrl.searchParams.delete('ds_lang');
-    playerUrl.searchParams.delete('sub_url');
-    try {
-        const resolvedSubtitleUrl = subtitleUrl ? new URL(subtitleUrl, subtitleBaseUrl) : null;
-        if (resolvedSubtitleUrl?.protocol === 'https:') {
-            playerUrl.searchParams.set('ds_lang', 'en');
-            playerUrl.searchParams.set('sub_url', resolvedSubtitleUrl);
-        }
-    } catch {
-        return playerUrl.toString();
-    }
-    return playerUrl.toString();
-};
-
 const resolveAllMangaUrl = async ({ title, type, episode, signal, fetchImpl = fetch }) => {
     const query = 'query($search:SearchInput $limit:Int $page:Int $translationType:VaildTranslationTypeEnumType $countryOrigin:VaildCountryOriginEnumType){shows(search:$search limit:$limit page:$page translationType:$translationType countryOrigin:$countryOrigin){edges{_id name}}}';
     const response = await fetchImpl('https://api.allanime.day/api', {
@@ -53,4 +37,4 @@ const resolveAllMangaUrl = async ({ title, type, episode, signal, fetchImpl = fe
         null;
 };
 
-module.exports = { resolveAllMangaUrl, withWyzieSubtitle };
+module.exports = { resolveAllMangaUrl };

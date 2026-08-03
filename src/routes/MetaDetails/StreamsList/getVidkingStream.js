@@ -19,13 +19,13 @@ const getVidkingStream = async ({ metaId, type, season, episode, signal, fetchIm
     const playerUrls = type === 'movie' ?
         {
             vidking: `https://www.vidking.net/embed/movie/${tmdbId}`,
-            vidsrc: `https://vidsrc-embed.ru/embed/movie?tmdb=${tmdbId}&ds_lang=en`,
+            vidsrc: `https://vidsrc-embed.ru/embed/movie?tmdb=${tmdbId}`,
             videasy: `https://player.videasy.net/movie/${tmdbId}`
         }
         :
         {
             vidking: `https://www.vidking.net/embed/tv/${tmdbId}/${season}/${episode}`,
-            vidsrc: `https://vidsrc-embed.ru/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}&ds_lang=en`,
+            vidsrc: `https://vidsrc-embed.ru/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`,
             videasy: `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}`
         };
 

@@ -1,5 +1,5 @@
 const getVidkingStream = require('../src/routes/MetaDetails/StreamsList/getVidkingStream');
-const { resolveAllMangaUrl, withWyzieSubtitle } = require('../src/routes/MetaDetails/playerProviders');
+const { resolveAllMangaUrl } = require('../src/routes/MetaDetails/playerProviders');
 const fs = require('fs');
 
 describe('getVidkingStream', () => {
@@ -14,7 +14,7 @@ describe('getVidkingStream', () => {
         expect(stream.deepLinks.externalPlayer.web).toBe('https://www.vidking.net/embed/movie/550');
         expect(stream.playerUrls).toEqual({
             vidking: 'https://www.vidking.net/embed/movie/550',
-            vidsrc: 'https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en',
+            vidsrc: 'https://vidsrc-embed.ru/embed/movie?tmdb=550',
             videasy: 'https://player.videasy.net/movie/550'
         });
     });
@@ -37,23 +37,14 @@ describe('getVidkingStream', () => {
         expect(fetchImpl).not.toHaveBeenCalled();
     });
 
-    test('uses provider-native controls without the old Wyzie overlay', () => {
+    test('limits the Wyzie wrapper to Vidking', () => {
         const playerSource = fs.readFileSync('src/routes/MetaDetails/VidkingPlayer.js', 'utf8');
 
         expect(playerSource).toContain('MultiselectMenu');
-        expect(playerSource).toContain('allowFullScreen');
-        expect(playerSource).not.toContain('subtitle-select');
-        expect(playerSource).not.toContain('player-fullscreen-button');
-    });
-
-    test('feeds the first Wyzie subtitle to VidSrc', () => {
-        expect(withWyzieSubtitle('https://vidsrc-embed.ru/embed/movie?tmdb=550', '/api/subtitles/file/2.srt', 'https://movies.example'))
-            .toBe('https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en&sub_url=https%3A%2F%2Fmovies.example%2Fapi%2Fsubtitles%2Ffile%2F2.srt');
-    });
-
-    test('omits VidSrc subtitle defaults when Wyzie has no usable track', () => {
-        expect(withWyzieSubtitle('https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en', null, 'https://movies.example'))
-            .toBe('https://vidsrc-embed.ru/embed/movie?tmdb=550');
+        expect(playerSource).toContain("provider === 'vidking' && tracks.length > 0");
+        expect(playerSource).toContain('subtitle-select');
+        expect(playerSource).toContain('player-fullscreen-button');
+        expect(playerSource).not.toContain('withWyzieSubtitle');
     });
 
     test('resolves an AllManga native episode page', async () => {
