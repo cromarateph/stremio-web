@@ -141,12 +141,45 @@
                 text-shadow: 0 0.1rem 0.2rem #000, 0 0 0.35rem #000;
             }
 
+            .player-fullscreen-button {
+                position: absolute;
+                right: 0.65rem;
+                bottom: 0.65rem;
+                z-index: 2;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.75rem;
+                height: 2.75rem;
+                border-radius: 0.5rem;
+                background-color: rgba(0, 0, 0, 0.82);
+                color: #fff;
+
+                .icon {
+                    width: 1.5rem;
+                    height: 1.5rem;
+                }
+            }
+
             &.movie-player {
                 flex: 0 1 48%;
                 align-self: flex-start;
                 max-width: 52rem;
                 aspect-ratio: 16 / 9;
                 margin: 1rem 1rem 1rem 2rem;
+            }
+
+            &:fullscreen {
+                width: 100vw;
+                height: 100vh;
+                max-width: none;
+                margin: 0;
+                border-radius: 0;
+                aspect-ratio: auto;
+
+                .subtitle-overlay {
+                    font-size: clamp(1.25rem, 2vw, 2.25rem);
+                }
             }
         }
 

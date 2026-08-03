@@ -1,4 +1,5 @@
 const getVidkingStream = require('../src/routes/MetaDetails/StreamsList/getVidkingStream');
+const fs = require('fs');
 
 describe('getVidkingStream', () => {
     test('maps IMDb movies to Vidking', async () => {
@@ -28,5 +29,13 @@ describe('getVidkingStream', () => {
 
         expect(await getVidkingStream({ metaId: 'local:movie', type: 'movie', fetchImpl })).toBe(null);
         expect(fetchImpl).not.toHaveBeenCalled();
+    });
+
+    test('fullscreens the parent player so subtitle overlays remain visible', () => {
+        const playerSource = fs.readFileSync('src/routes/MetaDetails/VidkingPlayer.js', 'utf8');
+
+        expect(playerSource).toContain('playerRef.current.requestFullscreen()');
+        expect(playerSource).not.toContain('allowFullScreen');
+        expect(playerSource).not.toContain('encrypted-media; fullscreen');
     });
 });

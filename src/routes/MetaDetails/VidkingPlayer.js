@@ -4,6 +4,8 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const classnames = require('classnames');
 const { useTranslation } = require('react-i18next');
+const { default: Icon } = require('@stremio/stremio-icons/react');
+const { Button } = require('stremio/components');
 const { findSubtitle, parseSubtitles } = require('./parseSubtitles');
 const styles = require('./styles');
 
@@ -13,6 +15,14 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
     const [selectedTrackId, setSelectedTrackId] = React.useState('');
     const [cues, setCues] = React.useState([]);
     const [currentTime, setCurrentTime] = React.useState(0);
+    const [fullscreen, setFullscreen] = React.useState(false);
+    const playerRef = React.useRef();
+
+    React.useEffect(() => {
+        const onFullscreenChange = () => setFullscreen(document.fullscreenElement === playerRef.current);
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+    }, []);
 
     React.useEffect(() => {
         const controller = new AbortController();
@@ -79,15 +89,18 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
 
     const subtitle = React.useMemo(() => findSubtitle(cues, currentTime), [cues, currentTime]);
     const selectTrack = React.useCallback((event) => setSelectedTrackId(event.currentTarget.value), []);
+    const toggleFullscreen = React.useCallback(() => {
+        const action = document.fullscreenElement === playerRef.current ? document.exitFullscreen() : playerRef.current.requestFullscreen();
+        action.catch((error) => console.error('Unable to toggle player fullscreen:', error));
+    }, []);
 
     return (
-        <div className={classnames(className, styles['vidking-player'])}>
+        <div ref={playerRef} className={classnames(className, styles['vidking-player'])}>
             <iframe
                 className={styles['vidking-frame']}
                 src={url}
                 title={title}
-                allow={'autoplay; encrypted-media; fullscreen; picture-in-picture'}
-                allowFullScreen={true}
+                allow={'autoplay; encrypted-media; picture-in-picture'}
                 referrerPolicy={'no-referrer'}
             />
             {
@@ -104,6 +117,9 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
                     null
             }
             {subtitle ? <div className={styles['subtitle-overlay']}>{subtitle}</div> : null}
+            <Button className={styles['player-fullscreen-button']} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
+                <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
+            </Button>
         </div>
     );
 };
