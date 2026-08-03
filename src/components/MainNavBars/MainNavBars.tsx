@@ -3,6 +3,8 @@
 import React, { memo } from 'react';
 import classnames from 'classnames';
 import { VerticalNavBar, HorizontalNavBar } from 'stremio/components/NavBar';
+import { useProfile } from 'stremio/common';
+import isPortalOwner = require('stremio/common/isPortalOwner');
 import { useContentGamepadNavigation, useVerticalNavGamepadNavigation } from 'stremio/services/GamepadNavigation';
 import styles from './MainNavBars.less';
 
@@ -14,6 +16,7 @@ const TABS = [
     { id: 'addons', label: 'ADDONS', icon: 'addons', href: '/addons' },
     { id: 'settings', label: 'SETTINGS', icon: 'settings', href: '/settings' },
 ];
+const PUBLIC_TABS = TABS.filter(({ id }) => id !== 'addons' && id !== 'settings');
 
 type Props = {
     className: string,
@@ -23,6 +26,7 @@ type Props = {
 };
 
 const MainNavBars = memo(({ className, route, query, children }: Props) => {
+    const profile = useProfile();
     const navRef = React.useRef(null);
     const contentRef = React.useRef(null);
 
@@ -45,7 +49,7 @@ const MainNavBars = memo(({ className, route, query, children }: Props) => {
                 ref={navRef}
                 className={styles['vertical-nav-bar']}
                 selected={route}
-                tabs={TABS}
+                tabs={isPortalOwner(profile) ? TABS : PUBLIC_TABS}
             />
             <div ref={contentRef} className={styles['nav-content-container']}>{children}</div>
         </div>
@@ -53,4 +57,3 @@ const MainNavBars = memo(({ className, route, query, children }: Props) => {
 });
 
 export default MainNavBars;
-

@@ -1,7 +1,15 @@
 // Copyright (C) 2017-2025 Smart code 203358507
 
 import React from 'react';
+import { Navigate } from 'react-router';
+import { useProfile } from 'stremio/common';
+import isPortalOwner = require('stremio/common/isPortalOwner');
 import routes from 'stremio/routes';
+
+const PortalOwnerOnly = ({ children }: { children: React.ReactNode }) => {
+    const profile = useProfile();
+    return isPortalOwner(profile) ? children : <Navigate to={'/'} replace={true} />;
+};
 
 export default [
     {
@@ -47,12 +55,12 @@ export default [
     {
         path: '/addons/:type?/:transportUrl?/:catalogId?',
         view: 3,
-        element: <routes.Addons />,
+        element: <PortalOwnerOnly><routes.Addons /></PortalOwnerOnly>,
     },
     {
         path: '/settings',
         view: 3,
-        element: <routes.Settings />,
+        element: <PortalOwnerOnly><routes.Settings /></PortalOwnerOnly>,
     },
     {
         path: '/player/:stream/:streamTransportUrl?/:metaTransportUrl?/:type?/:id?/:videoId?',

@@ -15,6 +15,7 @@ const { default: usePlayUrl } = require('stremio/common/usePlayUrl');
 const useToast = require('stremio/common/Toast/useToast');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
+const isPortalOwner = require('stremio/common/isPortalOwner');
 const styles = require('./styles');
 
 const NavMenuContent = ({ onClick }) => {
@@ -98,14 +99,21 @@ const NavMenuContent = ({ onClick }) => {
                     null
             }
             <div className={styles['nav-menu-section']}>
-                <Button className={styles['nav-menu-option-container']} title={ t('SETTINGS') } href={'#/settings'}>
-                    <Icon className={styles['icon']} name={'settings'} />
-                    <div className={styles['nav-menu-option-label']}>{ t('SETTINGS') }</div>
-                </Button>
-                <Button className={styles['nav-menu-option-container']} title={ t('ADDONS') } href={'#/addons'}>
-                    <Icon className={styles['icon']} name={'addons-outline'} />
-                    <div className={styles['nav-menu-option-label']}>{ t('ADDONS') }</div>
-                </Button>
+                {
+                    isPortalOwner(profile) ?
+                        <>
+                            <Button className={styles['nav-menu-option-container']} title={ t('SETTINGS') } href={'#/settings'}>
+                                <Icon className={styles['icon']} name={'settings'} />
+                                <div className={styles['nav-menu-option-label']}>{ t('SETTINGS') }</div>
+                            </Button>
+                            <Button className={styles['nav-menu-option-container']} title={ t('ADDONS') } href={'#/addons'}>
+                                <Icon className={styles['icon']} name={'addons-outline'} />
+                                <div className={styles['nav-menu-option-label']}>{ t('ADDONS') }</div>
+                            </Button>
+                        </>
+                        :
+                        null
+                }
                 <Button className={styles['nav-menu-option-container']} title={ t('PLAY_URL_MAGNET_LINK') } onClick={onPlayMagnetLinkClick}>
                     <Icon className={styles['icon']} name={'magnet-link'} />
                     <div className={styles['nav-menu-option-label']}>{ t('PLAY_URL_MAGNET_LINK') }</div>
