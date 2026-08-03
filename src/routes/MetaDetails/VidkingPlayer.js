@@ -73,7 +73,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
         allMangaUrl
         :
         provider === 'vidsrc' ?
-            withWyzieSubtitle(playerUrls.vidsrc, vidsrcSubtitleUrl)
+            withWyzieSubtitle(playerUrls.vidsrc, vidsrcSubtitleUrl, window.location.origin)
             :
             playerUrls[provider];
     const providerLabel = PROVIDERS.find(({ value }) => value === provider)?.label;

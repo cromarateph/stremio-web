@@ -47,8 +47,8 @@ describe('getVidkingStream', () => {
     });
 
     test('feeds the first Wyzie subtitle to VidSrc', () => {
-        expect(withWyzieSubtitle('https://vidsrc-embed.ru/embed/movie?tmdb=550', 'https://subs.example/english.srt'))
-            .toBe('https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en&sub_url=https%3A%2F%2Fsubs.example%2Fenglish.srt');
+        expect(withWyzieSubtitle('https://vidsrc-embed.ru/embed/movie?tmdb=550', '/api/subtitles/file/2.srt', 'https://movies.example'))
+            .toBe('https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en&sub_url=https%3A%2F%2Fmovies.example%2Fapi%2Fsubtitles%2Ffile%2F2.srt');
     });
 
     test('resolves an AllManga native episode page', async () => {
