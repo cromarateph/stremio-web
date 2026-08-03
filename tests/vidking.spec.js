@@ -51,6 +51,11 @@ describe('getVidkingStream', () => {
             .toBe('https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en&sub_url=https%3A%2F%2Fmovies.example%2Fapi%2Fsubtitles%2Ffile%2F2.srt');
     });
 
+    test('omits VidSrc subtitle defaults when Wyzie has no usable track', () => {
+        expect(withWyzieSubtitle('https://vidsrc-embed.ru/embed/movie?tmdb=550&ds_lang=en', null, 'https://movies.example'))
+            .toBe('https://vidsrc-embed.ru/embed/movie?tmdb=550');
+    });
+
     test('resolves an AllManga native episode page', async () => {
         const fetchImpl = jest.fn().mockResolvedValue({
             ok: true,

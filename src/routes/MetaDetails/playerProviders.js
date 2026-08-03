@@ -4,10 +4,12 @@ const normalizeTitle = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' '
 
 const withWyzieSubtitle = (url, subtitleUrl, subtitleBaseUrl) => {
     const playerUrl = new URL(url);
-    playerUrl.searchParams.set('ds_lang', 'en');
+    playerUrl.searchParams.delete('ds_lang');
+    playerUrl.searchParams.delete('sub_url');
     try {
         const resolvedSubtitleUrl = subtitleUrl ? new URL(subtitleUrl, subtitleBaseUrl) : null;
         if (resolvedSubtitleUrl?.protocol === 'https:') {
+            playerUrl.searchParams.set('ds_lang', 'en');
             playerUrl.searchParams.set('sub_url', resolvedSubtitleUrl);
         }
     } catch {
