@@ -13,6 +13,8 @@ const NavMenu = require('./NavMenu');
 const styles = require('./styles');
 const { t } = require('i18next');
 
+const PORTAL_TITLE = 'Aiken\'s Movie Portal';
+
 const HorizontalNavBar = React.memo(({ className, route, query, title, backButton, searchBar, fullscreenButton, navMenu, originPath, hdrInfo, ...props }) => {
     const navigate = useNavigate();
     const backButtonOnClick = React.useCallback(() => {
@@ -44,6 +46,7 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
                             src={require('/assets/images/stremio_symbol.png')}
                             alt={' '}
                         />
+                        <span className={styles['portal-title']}>{PORTAL_TITLE}</span>
                     </div>
             }
             {
