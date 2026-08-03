@@ -8,6 +8,7 @@ const { useCore } = require('stremio/core');
 const { Routes } = require('stremio-router');
 const { Chromecast, ServicesProvider, GamepadProvider } = require('stremio/services');
 const { FullscreenProvider, ToastProvider, TooltipProvider, ShortcutsProvider, DiscordProvider, CONSTANTS, useBinaryState, useProfile, withCoreSuspender, onFileDrop, usePlatform } = require('stremio/common');
+const focusFirstMetaItemOnArrow = require('stremio/common/focusFirstMetaItemOnArrow');
 const ServicesToaster = require('./ServicesToaster');
 const SearchParamsHandler = require('./SearchParamsHandler');
 const DeepLinkHandler = require('./DeepLinkHandler');
@@ -33,6 +34,12 @@ const App = () => {
     }, []);
     const [shortcutModalOpen,, closeShortcutsModal, toggleShortcutModal] = useBinaryState(false);
     const [gamepadModalOpen,, closeGamepadModal, toggleGamepadModal] = useBinaryState(false);
+
+    React.useEffect(() => {
+        const onKeyDown = (event) => focusFirstMetaItemOnArrow(event);
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
+    }, []);
 
     const onShortcut = React.useCallback((name, combo, key) => {
         switch (name) {
