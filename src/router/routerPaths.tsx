@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Navigate } from 'react-router';
-import { useProfile } from 'stremio/common';
+import useProfile = require('stremio/common/useProfile');
 import isPortalOwner = require('stremio/common/isPortalOwner');
 import routes from 'stremio/routes';
 

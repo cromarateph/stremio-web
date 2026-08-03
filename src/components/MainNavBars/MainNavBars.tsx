@@ -3,7 +3,7 @@
 import React, { memo } from 'react';
 import classnames from 'classnames';
 import { VerticalNavBar, HorizontalNavBar } from 'stremio/components/NavBar';
-import { useProfile } from 'stremio/common';
+import useProfile = require('stremio/common/useProfile');
 import isPortalOwner = require('stremio/common/isPortalOwner');
 import { useContentGamepadNavigation, useVerticalNavGamepadNavigation } from 'stremio/services/GamepadNavigation';
 import styles from './MainNavBars.less';
