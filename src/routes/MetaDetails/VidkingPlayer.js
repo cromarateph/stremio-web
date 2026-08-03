@@ -3,46 +3,30 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const classnames = require('classnames');
-const { useTranslation } = require('react-i18next');
-const { default: Icon } = require('@stremio/stremio-icons/react');
-const { Button } = require('stremio/components');
-const { findSubtitle, parseSubtitles } = require('./parseSubtitles');
+const { MultiselectMenu } = require('stremio/components');
+const { resolveAllMangaUrl, withWyzieSubtitle } = require('./playerProviders');
 const styles = require('./styles');
 
-const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
-    const { t } = useTranslation();
-    const [tracks, setTracks] = React.useState([]);
-    const [selectedTrackId, setSelectedTrackId] = React.useState('');
-    const [cues, setCues] = React.useState([]);
-    const [currentTime, setCurrentTime] = React.useState(0);
-    const [fullscreen, setFullscreen] = React.useState(false);
-    const [controlsVisible, setControlsVisible] = React.useState(true);
-    const playerRef = React.useRef();
-    const hideControlsTimerRef = React.useRef();
+const PROVIDERS = [
+    { value: 'vidking', label: 'Vidking' },
+    { value: 'vidsrc', label: 'VidSrc' },
+    { value: 'videasy', label: 'Videasy' },
+    { value: 'allmanga', label: 'AllManga · Anime' }
+];
 
-    const showControls = React.useCallback(() => {
-        clearTimeout(hideControlsTimerRef.current);
-        setControlsVisible(true);
-        if (document.fullscreenElement === playerRef.current) {
-            hideControlsTimerRef.current = setTimeout(() => setControlsVisible(false), 5000);
+const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, episode }) => {
+    const [provider, setProvider] = React.useState('vidking');
+    const [vidsrcSubtitleUrl, setVidsrcSubtitleUrl] = React.useState(null);
+    const [allMangaUrl, setAllMangaUrl] = React.useState(null);
+    const [allMangaLoading, setAllMangaLoading] = React.useState(false);
+
+    React.useEffect(() => setProvider('vidking'), [metaId, season, episode]);
+
+    React.useEffect(() => {
+        if (provider !== 'vidsrc') {
+            return undefined;
         }
-    }, []);
 
-    React.useEffect(() => {
-        const onFullscreenChange = () => {
-            setFullscreen(document.fullscreenElement === playerRef.current);
-            showControls();
-        };
-        document.addEventListener('fullscreenchange', onFullscreenChange);
-        document.addEventListener('keydown', showControls);
-        return () => {
-            clearTimeout(hideControlsTimerRef.current);
-            document.removeEventListener('fullscreenchange', onFullscreenChange);
-            document.removeEventListener('keydown', showControls);
-        };
-    }, [showControls]);
-
-    React.useEffect(() => {
         const controller = new AbortController();
         const params = new URLSearchParams({ id: metaId, language: 'en' });
         if (Number.isInteger(season) && Number.isInteger(episode)) {
@@ -50,107 +34,88 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
             params.set('episode', episode);
         }
 
-        setTracks([]);
-        setSelectedTrackId('');
+        setVidsrcSubtitleUrl(null);
         fetch(`/api/subtitles/search?${params}`, { signal: controller.signal })
             .then((response) => response.ok ? response.json() : [])
-            .then((nextTracks) => {
-                setTracks(nextTracks);
-                setSelectedTrackId(nextTracks[0]?.id ?? '');
-            })
+            .then((tracks) => setVidsrcSubtitleUrl(tracks[0]?.url ?? null))
             .catch((error) => {
                 if (error.name !== 'AbortError') {
-                    setTracks([]);
+                    setVidsrcSubtitleUrl(null);
                 }
             });
         return () => controller.abort();
-    }, [metaId, season, episode]);
+    }, [provider, metaId, season, episode]);
 
     React.useEffect(() => {
-        const controller = new AbortController();
-        const track = tracks.find(({ id }) => id === selectedTrackId);
-        setCues([]);
-        if (!track) {
-            return () => controller.abort();
+        if (provider !== 'allmanga') {
+            return undefined;
         }
 
-        fetch(track.url, { signal: controller.signal })
-            .then((response) => response.ok ? response.text() : '')
-            .then((content) => setCues(parseSubtitles(content)))
+        const controller = new AbortController();
+        setAllMangaUrl(null);
+        setAllMangaLoading(true);
+        resolveAllMangaUrl({ title, type, episode, signal: controller.signal })
+            .then(setAllMangaUrl)
             .catch((error) => {
                 if (error.name !== 'AbortError') {
-                    setCues([]);
+                    setAllMangaUrl(null);
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) {
+                    setAllMangaLoading(false);
                 }
             });
         return () => controller.abort();
-    }, [tracks, selectedTrackId]);
+    }, [provider, title, type, episode]);
 
-    React.useEffect(() => {
-        const playerOrigin = new URL(url).origin;
-        const onMessage = (event) => {
-            if (event.origin !== playerOrigin) {
-                return;
-            }
-
-            try {
-                const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-                if (message?.type === 'PLAYER_EVENT' && typeof message.data?.currentTime === 'number') {
-                    setCurrentTime(message.data.currentTime);
-                    if (message.data.event !== 'timeupdate') {
-                        showControls();
-                    }
-                }
-            } catch {
-                return;
-            }
-        };
-        window.addEventListener('message', onMessage);
-        return () => window.removeEventListener('message', onMessage);
-    }, [url, showControls]);
-
-    const subtitle = React.useMemo(() => findSubtitle(cues, currentTime), [cues, currentTime]);
-    const selectTrack = React.useCallback((event) => setSelectedTrackId(event.currentTarget.value), []);
-    const toggleFullscreen = React.useCallback(() => {
-        const action = document.fullscreenElement === playerRef.current ? document.exitFullscreen() : playerRef.current.requestFullscreen();
-        action.catch((error) => console.error('Unable to toggle player fullscreen:', error));
-    }, []);
+    const activeUrl = provider === 'allmanga' ?
+        allMangaUrl
+        :
+        provider === 'vidsrc' ?
+            withWyzieSubtitle(playerUrls.vidsrc, vidsrcSubtitleUrl)
+            :
+            playerUrls[provider];
+    const providerLabel = PROVIDERS.find(({ value }) => value === provider)?.label;
 
     return (
-        <div ref={playerRef} className={classnames(className, styles['vidking-player'])} onMouseMove={showControls} onTouchStart={showControls}>
-            <iframe
-                className={styles['vidking-frame']}
-                src={url}
-                title={title}
-                allow={'autoplay; encrypted-media; picture-in-picture'}
-                referrerPolicy={'no-referrer'}
+        <div className={classnames(className, styles['vidking-player'])}>
+            <MultiselectMenu
+                className={styles['provider-menu']}
+                options={PROVIDERS}
+                value={provider}
+                title={providerLabel}
+                onSelect={setProvider}
             />
-            {
-                tracks.length > 0 ?
-                    <select className={classnames(styles['subtitle-select'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} aria-label={t('PLAYER_SUBTITLES_LANGUAGES')} value={selectedTrackId} onChange={selectTrack}>
-                        <option value={''}>{t('OFF')}</option>
-                        {tracks.map((track) => (
-                            <option key={track.id} value={track.id}>
-                                {track.display}{track.hearingImpaired ? ' CC' : ''}{track.release ? ` · ${track.release}` : ''}
-                            </option>
-                        ))}
-                    </select>
-                    :
-                    null
+            {activeUrl ?
+                <iframe
+                    key={`${provider}:${activeUrl}`}
+                    className={styles['vidking-frame']}
+                    src={activeUrl}
+                    title={`Watch ${title} on ${providerLabel}`}
+                    allow={'autoplay; encrypted-media; picture-in-picture; fullscreen'}
+                    allowFullScreen={true}
+                    referrerPolicy={'no-referrer'}
+                />
+                :
+                <div className={styles['player-status']} role={'status'}>
+                    {allMangaLoading ? 'Finding an AllManga source…' : 'AllManga could not find this anime.'}
+                </div>
             }
-            {subtitle ? <div className={styles['subtitle-overlay']}>{subtitle}</div> : null}
-            <Button className={classnames(styles['player-fullscreen-button'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
-                <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
-            </Button>
-            {fullscreen && !controlsVisible ? <div className={styles['player-activity-catcher']} onMouseMove={showControls} onClick={showControls} onTouchStart={showControls} /> : null}
         </div>
     );
 };
 
 VidkingPlayer.propTypes = {
     className: PropTypes.string,
-    url: PropTypes.string.isRequired,
+    playerUrls: PropTypes.shape({
+        vidking: PropTypes.string.isRequired,
+        vidsrc: PropTypes.string.isRequired,
+        videasy: PropTypes.string.isRequired
+    }).isRequired,
     title: PropTypes.string.isRequired,
     metaId: PropTypes.string.isRequired,
+    type: PropTypes.oneOf(['movie', 'series']).isRequired,
     season: PropTypes.number,
     episode: PropTypes.number
 };

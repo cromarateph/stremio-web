@@ -104,93 +104,57 @@
                 border: 0;
             }
 
-            .subtitle-select {
+            .provider-menu {
                 position: absolute;
                 top: 0.75rem;
-                left: 0.75rem;
+                right: 0.75rem;
                 z-index: 2;
-                max-width: calc(100% - 1.5rem);
-                min-height: 2.5rem;
-                border: 0;
-                border-radius: 0.5rem;
-                padding: 0.45rem 0.75rem;
+                min-width: 10rem;
                 background-color: rgba(0, 0, 0, 0.82);
-                color: #fff;
-                color-scheme: dark;
-                font: inherit;
-
-                &:focus-visible {
-                    outline: var(--focus-outline-size) solid var(--primary-accent-color);
-                    outline-offset: 0.15rem;
-                }
+                border-radius: var(--border-radius);
             }
 
-            .subtitle-overlay {
-                pointer-events: none;
-                position: absolute;
-                right: 8%;
-                bottom: 12%;
-                left: 8%;
-                z-index: 1;
-                color: #fff;
-                font-size: 1.2rem;
-                font-weight: 700;
-                line-height: 1.35;
-                text-align: center;
-                white-space: pre-line;
-                text-shadow: 0 0.1rem 0.2rem #000, 0 0 0.35rem #000;
-            }
-
-            .player-fullscreen-button {
-                position: absolute;
-                right: 0;
-                bottom: 0;
-                z-index: 2;
+            .player-status {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 4.5rem;
-                height: 4.5rem;
-                border-radius: 0.5rem 0 0 0;
-                background-color: #000;
-                color: #fff;
-
-                .icon {
-                    width: 1.5rem;
-                    height: 1.5rem;
-                }
-            }
-
-            .controls-hidden {
-                pointer-events: none;
-                opacity: 0;
-            }
-
-            .player-activity-catcher {
-                position: absolute;
-                inset: 0;
-                z-index: 3;
+                width: 100%;
+                height: 100%;
+                padding: 2rem;
+                box-sizing: border-box;
+                color: var(--primary-foreground-color);
+                text-align: center;
             }
 
             &.movie-player {
-                flex: 0 1 48%;
-                align-self: flex-start;
-                max-width: 52rem;
+                width: 100%;
                 aspect-ratio: 16 / 9;
-                margin: 1rem 1rem 1rem 2rem;
+                margin: 0;
+            }
+        }
+
+        .movie-layout {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 2rem;
+            padding: 1rem 2rem 2rem;
+            box-sizing: border-box;
+            overflow: hidden;
+
+            .movie-player-placeholder {
+                width: 100%;
+                aspect-ratio: 16 / 9;
+                border-radius: var(--border-radius);
+                background-color: #000;
             }
 
-            &:fullscreen {
-                width: 100vw;
-                height: 100vh;
-                max-width: none;
-                margin: 0;
-                border-radius: 0;
-                aspect-ratio: auto;
-
-                .subtitle-overlay {
-                    font-size: clamp(1.25rem, 2vw, 2.25rem);
-                }
+            .meta-preview {
+                min-width: 0;
+                min-height: 0;
+                padding: 0;
             }
         }
 
@@ -247,6 +211,23 @@
                 &.movie-player {
                     max-width: none;
                     margin: 0 1rem 1rem;
+                }
+            }
+
+            .movie-layout {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 0 1rem 2rem;
+                overflow: visible;
+
+                .vidking-player, .movie-player-placeholder {
+                    width: 100%;
+                    margin: 0;
+                }
+
+                .meta-preview {
+                    padding: 0 0.5rem;
                 }
             }
 

@@ -11,7 +11,7 @@ const { useNavigateWithOrigin } = require('stremio-router');
 const { HorizontalNavBar, DelayedRenderer, Image, MetaPreview } = require('stremio/components');
 const StreamsList = require('./StreamsList');
 const VideosList = require('./VideosList');
-const VidkingPlayer = require('./VidkingPlayer');
+const PlayerFrame = require('./VidkingPlayer');
 const getVidkingStream = require('./StreamsList/getVidkingStream');
 const useMetaDetails = require('./useMetaDetails');
 const useSeason = require('./useSeason');
@@ -52,46 +52,46 @@ const MetaDetails = () => {
             :
             null;
     }, [metaDetails.metaItem, streamPath]);
-    const [vidkingSelection, setVidkingSelection] = React.useState(null);
-    const selectVidkingVideo = React.useCallback((video) => {
-        setVidkingSelection({ type, id, season, video });
+    const [playerSelection, setPlayerSelection] = React.useState(null);
+    const selectPlayerVideo = React.useCallback((video) => {
+        setPlayerSelection({ type, id, season, video });
     }, [type, id, season]);
-    const selectedVidkingVideo = vidkingSelection?.type === type &&
-        vidkingSelection?.id === id &&
-        vidkingSelection?.season === season ?
-        vidkingSelection.video
+    const selectedPlayerVideo = playerSelection?.type === type &&
+        playerSelection?.id === id &&
+        playerSelection?.season === season ?
+        playerSelection.video
         :
         null;
-    const vidkingVideo = video ?? selectedVidkingVideo;
-    const vidkingMetaId = metaDetails.metaItem?.content.type === 'Ready' ?
+    const playerVideo = video ?? selectedPlayerVideo;
+    const playerMetaId = metaDetails.metaItem?.content.type === 'Ready' ?
         metaDetails.metaItem.content.content.id
         :
         null;
-    const [vidkingUrl, setVidkingUrl] = React.useState(null);
+    const [playerUrls, setPlayerUrls] = React.useState(null);
     React.useEffect(() => {
         const controller = new AbortController();
-        setVidkingUrl(null);
+        setPlayerUrls(null);
 
-        if (vidkingMetaId === null || type !== 'movie' && vidkingVideo === null) {
+        if (playerMetaId === null || type !== 'movie' && playerVideo === null) {
             return () => controller.abort();
         }
 
         getVidkingStream({
-            metaId: vidkingMetaId,
+            metaId: playerMetaId,
             type,
-            season: vidkingVideo?.season,
-            episode: vidkingVideo?.episode,
+            season: playerVideo?.season,
+            episode: playerVideo?.episode,
             signal: controller.signal
         }).then((stream) => {
-            setVidkingUrl(stream?.deepLinks.externalPlayer.web ?? null);
+            setPlayerUrls(stream?.playerUrls ?? null);
         }).catch((error) => {
             if (error.name !== 'AbortError') {
-                setVidkingUrl(null);
+                setPlayerUrls(null);
             }
         });
 
         return () => controller.abort();
-    }, [vidkingMetaId, type, vidkingVideo?.season, vidkingVideo?.episode]);
+    }, [playerMetaId, type, playerVideo?.season, playerVideo?.episode]);
     const addToLibrary = React.useCallback(() => {
         if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') {
             return;
@@ -163,14 +163,40 @@ const MetaDetails = () => {
         metaDetails.metaItem.content.content.background.length > 0
     ), [metaPath, metaDetails]);
     const originPath = React.useMemo(() => getStoredOrigin(), [getStoredOrigin]);
-    const vidkingPlayer = vidkingUrl !== null ?
-        <VidkingPlayer
+    const metaPreview = metaDetails.metaItem?.content.type === 'Ready' ?
+        <MetaPreview
+            className={classnames(styles['meta-preview'], 'animation-fade-in')}
+            name={metaDetails.metaItem.content.content.name}
+            logo={metaDetails.metaItem.content.content.logo}
+            runtime={metaDetails.metaItem.content.content.runtime}
+            releaseInfo={metaDetails.metaItem.content.content.releaseInfo}
+            released={metaDetails.metaItem.content.content.released}
+            description={
+                video !== null && typeof video.overview === 'string' && video.overview.length > 0 ?
+                    video.overview
+                    :
+                    metaDetails.metaItem.content.content.description
+            }
+            links={metaDetails.metaItem.content.content.links}
+            trailerStreams={metaDetails.metaItem.content.content.trailerStreams}
+            inLibrary={metaDetails.metaItem.content.content.inLibrary}
+            toggleInLibrary={metaDetails.metaItem.content.content.inLibrary ? removeFromLibrary : addToLibrary}
+            watched={metaDetails.metaItem.content.content.watched}
+            toggleWatched={toggleWatched}
+            metaId={metaDetails.metaItem.content.content.id}
+            ratingInfo={metaDetails.ratingInfo}
+        />
+        :
+        null;
+    const player = playerUrls !== null ?
+        <PlayerFrame
             className={classnames({ [styles['movie-player']]: type === 'movie' }, 'animation-fade-in')}
-            url={vidkingUrl}
-            title={`Watch ${vidkingVideo?.title ?? metaDetails.metaItem.content.content.name} on Vidking`}
-            metaId={vidkingMetaId}
-            season={vidkingVideo?.season}
-            episode={vidkingVideo?.episode}
+            playerUrls={playerUrls}
+            title={playerVideo?.title ?? metaDetails.metaItem.content.content.name}
+            metaId={playerMetaId}
+            type={type}
+            season={playerVideo?.season}
+            episode={playerVideo?.episode}
         />
         :
         null;
@@ -223,34 +249,18 @@ const MetaDetails = () => {
                                 metaDetails.metaItem.content.type === 'Loading' ?
                                     <MetaPreview.Placeholder className={styles['meta-preview']} />
                                     :
-                                    vidkingUrl !== null && type !== 'movie' ?
-                                        vidkingPlayer
+                                    type === 'movie' ?
+                                        <div className={styles['movie-layout']}>
+                                            {player ?? <div className={styles['movie-player-placeholder']} aria-hidden={true} />}
+                                            {metaPreview}
+                                        </div>
                                         :
-                                        <MetaPreview
-                                            className={classnames(styles['meta-preview'], 'animation-fade-in')}
-                                            name={metaDetails.metaItem.content.content.name}
-                                            logo={metaDetails.metaItem.content.content.logo}
-                                            runtime={metaDetails.metaItem.content.content.runtime}
-                                            releaseInfo={metaDetails.metaItem.content.content.releaseInfo}
-                                            released={metaDetails.metaItem.content.content.released}
-                                            description={
-                                                video !== null && typeof video.overview === 'string' && video.overview.length > 0 ?
-                                                    video.overview
-                                                    :
-                                                    metaDetails.metaItem.content.content.description
-                                            }
-                                            links={metaDetails.metaItem.content.content.links}
-                                            trailerStreams={metaDetails.metaItem.content.content.trailerStreams}
-                                            inLibrary={metaDetails.metaItem.content.content.inLibrary}
-                                            toggleInLibrary={metaDetails.metaItem.content.content.inLibrary ? removeFromLibrary : addToLibrary}
-                                            watched={metaDetails.metaItem.content.content.watched}
-                                            toggleWatched={toggleWatched}
-                                            metaId={metaDetails.metaItem.content.content.id}
-                                            ratingInfo={metaDetails.ratingInfo}
-                                        />
+                                        playerUrls !== null ?
+                                            player
+                                            :
+                                            metaPreview
                 }
-                {vidkingUrl === null || type === 'movie' ? <div className={styles['spacing']} /> : null}
-                {type === 'movie' ? vidkingPlayer : null}
+                {type !== 'movie' && playerUrls === null ? <div className={styles['spacing']} /> : null}
                 {
                     type === 'movie' ?
                         null
@@ -270,9 +280,9 @@ const MetaDetails = () => {
                                     metaItem={metaDetails.metaItem}
                                     libraryItem={metaDetails.libraryItem}
                                     season={season}
-                                    selectedVideoId={vidkingVideo?.id ?? metaDetails.libraryItem?.state?.video_id}
+                                    selectedVideoId={playerVideo?.id ?? metaDetails.libraryItem?.state?.video_id}
                                     seasonOnSelect={seasonOnSelect}
-                                    onVideoSelect={selectVidkingVideo}
+                                    onVideoSelect={selectPlayerVideo}
                                     toggleNotifications={toggleNotifications}
                                 />
                                 :

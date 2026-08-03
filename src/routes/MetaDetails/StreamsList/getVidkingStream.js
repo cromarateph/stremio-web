@@ -16,17 +16,26 @@ const getVidkingStream = async ({ metaId, type, season, episode, signal, fetchIm
         return null;
     }
 
-    const url = type === 'movie' ?
-        `https://www.vidking.net/embed/movie/${tmdbId}`
+    const playerUrls = type === 'movie' ?
+        {
+            vidking: `https://www.vidking.net/embed/movie/${tmdbId}`,
+            vidsrc: `https://vidsrc-embed.ru/embed/movie?tmdb=${tmdbId}&ds_lang=en`,
+            videasy: `https://player.videasy.net/movie/${tmdbId}`
+        }
         :
-        `https://www.vidking.net/embed/tv/${tmdbId}/${season}/${episode}`;
+        {
+            vidking: `https://www.vidking.net/embed/tv/${tmdbId}/${season}/${episode}`,
+            vidsrc: `https://vidsrc-embed.ru/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}&ds_lang=en`,
+            videasy: `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}`
+        };
 
     return {
         addonName: 'Vidking',
         name: 'Vidking',
         description: 'Yoru · Cypher · Breach · Neon · Vyse · Killjoy · Fade · Omen · Raze',
+        playerUrls,
         deepLinks: {
-            externalPlayer: { web: url }
+            externalPlayer: { web: playerUrls.vidking }
         }
     };
 };
