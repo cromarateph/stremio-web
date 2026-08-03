@@ -23,10 +23,12 @@ const NAVIGATE_TABS_ROUTES = ['/', '/discover', '/library', '/calendar', '/addon
 const App = () => {
     const core = useCore();
     const profile = useProfile();
-    const { i18n } = useTranslation();
+    const { i18n, t } = useTranslation();
     const { shell } = usePlatform();
     const navigate = useNavigate();
     const [gamepadSupportEnabled, setGamepadSupportEnabled] = React.useState(false);
+    const [aikenGreetingKey, setAikenGreetingKey] = React.useState(0);
+    const aikenGreetingTimer = React.useRef(null);
     const services = React.useMemo(() => {
         return {
             chromecast: new Chromecast(),
@@ -34,6 +36,14 @@ const App = () => {
     }, []);
     const [shortcutModalOpen,, closeShortcutsModal, toggleShortcutModal] = useBinaryState(false);
     const [gamepadModalOpen,, closeGamepadModal, toggleGamepadModal] = useBinaryState(false);
+
+    const showAikenGreeting = React.useCallback(() => {
+        window.clearTimeout(aikenGreetingTimer.current);
+        setAikenGreetingKey((key) => key + 1);
+        aikenGreetingTimer.current = window.setTimeout(() => setAikenGreetingKey(0), 4000);
+    }, []);
+
+    React.useEffect(() => () => window.clearTimeout(aikenGreetingTimer.current), []);
 
     React.useEffect(() => {
         const onKeyDown = (event) => focusFirstMetaItemOnArrow(event);
@@ -206,6 +216,35 @@ const App = () => {
                                     <DeepLinkHandler />
                                     <UpdaterBanner className={styles['updater-banner-container']} />
                                     <ProtectedRoutes />
+                                    <div className={styles['aiken-avatar-container']}>
+                                        {
+                                            aikenGreetingKey > 0 &&
+                                                <div
+                                                    key={aikenGreetingKey}
+                                                    className={styles['aiken-greeting']}
+                                                    role={'status'}
+                                                >
+                                                    {
+                                                        t('AIKEN_GREETING', {
+                                                            defaultValue: 'Hi, I\'m Aiken! Let\'s watch a movie!'
+                                                        })
+                                                    }
+                                                </div>
+                                        }
+                                        <button
+                                            className={styles['aiken-avatar-button']}
+                                            type={'button'}
+                                            aria-label={t('AIKEN_AVATAR_LABEL', { defaultValue: 'Meet Aiken' })}
+                                            aria-expanded={aikenGreetingKey > 0}
+                                            onClick={showAikenGreeting}
+                                        >
+                                            <img
+                                                className={styles['aiken-avatar-image']}
+                                                src={require('/assets/images/aiken-boy.png')}
+                                                alt={''}
+                                            />
+                                        </button>
+                                    </div>
                                 </DiscordProvider>
                             </FullscreenProvider>
                         </ShortcutsProvider>

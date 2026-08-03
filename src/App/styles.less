@@ -221,6 +221,106 @@ html {
                 right: 0;
                 bottom: 0;
             }
+
+            .aiken-avatar-container {
+                position: fixed;
+                right: max(1rem, var(--safe-area-inset-right));
+                bottom: var(--safe-area-inset-bottom);
+                z-index: 101;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                overflow: visible;
+                pointer-events: none;
+
+                .aiken-greeting {
+                    position: relative;
+                    max-width: min(17rem, calc(100vw - 2rem));
+                    margin: 0 0.5rem 0.75rem 0;
+                    padding: 0.75rem 1rem;
+                    overflow: visible;
+                    color: var(--primary-foreground-color);
+                    font-size: 1rem;
+                    font-weight: 600;
+                    line-height: 1.4;
+                    border: 1px solid rgba(255, 255, 255, 0.18);
+                    border-radius: 1rem 1rem 0.25rem 1rem;
+                    background-color: var(--modal-background-color);
+                    box-shadow: var(--outer-glow);
+                    animation: aiken-greeting-lifecycle 4s ease-out both;
+                    pointer-events: auto;
+
+                    &::after {
+                        position: absolute;
+                        right: 1.25rem;
+                        bottom: -0.5rem;
+                        width: 1rem;
+                        height: 1rem;
+                        content: '';
+                        background-color: var(--modal-background-color);
+                        transform: rotate(45deg);
+                    }
+                }
+
+                .aiken-avatar-button {
+                    min-width: 4.5rem;
+                    min-height: 4.5rem;
+                    overflow: visible;
+                    cursor: pointer;
+                    pointer-events: auto;
+                    transition: filter 0.2s ease-out, opacity 0.15s ease-out;
+
+                    &:hover {
+                        filter: brightness(1.08);
+                    }
+
+                    &:active {
+                        opacity: 0.8;
+                    }
+
+                    &:focus-visible {
+                        outline: 3px solid var(--primary-accent-color);
+                        outline-offset: 0.25rem;
+                        border-radius: 3rem 3rem 0.75rem 0.75rem;
+                    }
+                }
+
+                .aiken-avatar-image {
+                    display: block;
+                    width: auto;
+                    height: clamp(8rem, 18vh, 13rem);
+                    filter: drop-shadow(0 0.5rem 1rem rgba(0, 0, 0, 0.45));
+                }
+            }
+        }
+    }
+}
+
+@keyframes aiken-greeting-lifecycle {
+    0% {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+
+    8%, 85% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(0.25rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aiken-avatar-container {
+        .aiken-greeting {
+            animation: none;
+        }
+
+        .aiken-avatar-button {
+            transition: none;
         }
     }
 }
@@ -253,6 +353,14 @@ html {
     html {
         body {
             :global(#app) {
+                .aiken-avatar-container {
+                    right: max(0.5rem, var(--safe-area-inset-right));
+
+                    .aiken-avatar-image {
+                        height: clamp(7rem, 16vh, 9rem);
+                    }
+                }
+
                 .toasts-container {
                     padding: 0 1rem;
                 }
