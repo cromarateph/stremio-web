@@ -143,22 +143,33 @@
 
             .player-fullscreen-button {
                 position: absolute;
-                right: 0.65rem;
-                bottom: 0.65rem;
+                right: 0;
+                bottom: 0;
                 z-index: 2;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 2.75rem;
-                height: 2.75rem;
-                border-radius: 0.5rem;
-                background-color: rgba(0, 0, 0, 0.82);
+                width: 4.5rem;
+                height: 4.5rem;
+                border-radius: 0.5rem 0 0 0;
+                background-color: #000;
                 color: #fff;
 
                 .icon {
                     width: 1.5rem;
                     height: 1.5rem;
                 }
+            }
+
+            .controls-hidden {
+                pointer-events: none;
+                opacity: 0;
+            }
+
+            .player-activity-catcher {
+                position: absolute;
+                inset: 0;
+                z-index: 3;
             }
 
             &.movie-player {

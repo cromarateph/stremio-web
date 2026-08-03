@@ -35,6 +35,8 @@ describe('getVidkingStream', () => {
         const playerSource = fs.readFileSync('src/routes/MetaDetails/VidkingPlayer.js', 'utf8');
 
         expect(playerSource).toContain('playerRef.current.requestFullscreen()');
+        expect(playerSource).toContain('setTimeout(() => setControlsVisible(false), 5000)');
+        expect(playerSource).toContain("styles['player-activity-catcher']");
         expect(playerSource).not.toContain('allowFullScreen');
         expect(playerSource).not.toContain('encrypted-media; fullscreen');
     });

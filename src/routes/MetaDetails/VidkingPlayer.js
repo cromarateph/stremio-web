@@ -16,13 +16,31 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
     const [cues, setCues] = React.useState([]);
     const [currentTime, setCurrentTime] = React.useState(0);
     const [fullscreen, setFullscreen] = React.useState(false);
+    const [controlsVisible, setControlsVisible] = React.useState(true);
     const playerRef = React.useRef();
+    const hideControlsTimerRef = React.useRef();
+
+    const showControls = React.useCallback(() => {
+        clearTimeout(hideControlsTimerRef.current);
+        setControlsVisible(true);
+        if (document.fullscreenElement === playerRef.current) {
+            hideControlsTimerRef.current = setTimeout(() => setControlsVisible(false), 5000);
+        }
+    }, []);
 
     React.useEffect(() => {
-        const onFullscreenChange = () => setFullscreen(document.fullscreenElement === playerRef.current);
+        const onFullscreenChange = () => {
+            setFullscreen(document.fullscreenElement === playerRef.current);
+            showControls();
+        };
         document.addEventListener('fullscreenchange', onFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
-    }, []);
+        document.addEventListener('keydown', showControls);
+        return () => {
+            clearTimeout(hideControlsTimerRef.current);
+            document.removeEventListener('fullscreenchange', onFullscreenChange);
+            document.removeEventListener('keydown', showControls);
+        };
+    }, [showControls]);
 
     React.useEffect(() => {
         const controller = new AbortController();
@@ -78,6 +96,9 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
                 const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
                 if (message?.type === 'PLAYER_EVENT' && typeof message.data?.currentTime === 'number') {
                     setCurrentTime(message.data.currentTime);
+                    if (message.data.event !== 'timeupdate') {
+                        showControls();
+                    }
                 }
             } catch {
                 return;
@@ -85,7 +106,7 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
-    }, [url]);
+    }, [url, showControls]);
 
     const subtitle = React.useMemo(() => findSubtitle(cues, currentTime), [cues, currentTime]);
     const selectTrack = React.useCallback((event) => setSelectedTrackId(event.currentTarget.value), []);
@@ -95,7 +116,7 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
     }, []);
 
     return (
-        <div ref={playerRef} className={classnames(className, styles['vidking-player'])}>
+        <div ref={playerRef} className={classnames(className, styles['vidking-player'])} onMouseMove={showControls} onTouchStart={showControls}>
             <iframe
                 className={styles['vidking-frame']}
                 src={url}
@@ -105,7 +126,7 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
             />
             {
                 tracks.length > 0 ?
-                    <select className={styles['subtitle-select']} aria-label={t('PLAYER_SUBTITLES_LANGUAGES')} value={selectedTrackId} onChange={selectTrack}>
+                    <select className={classnames(styles['subtitle-select'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} aria-label={t('PLAYER_SUBTITLES_LANGUAGES')} value={selectedTrackId} onChange={selectTrack}>
                         <option value={''}>{t('OFF')}</option>
                         {tracks.map((track) => (
                             <option key={track.id} value={track.id}>
@@ -117,9 +138,10 @@ const VidkingPlayer = ({ className, url, title, metaId, season, episode }) => {
                     null
             }
             {subtitle ? <div className={styles['subtitle-overlay']}>{subtitle}</div> : null}
-            <Button className={styles['player-fullscreen-button']} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
+            <Button className={classnames(styles['player-fullscreen-button'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
                 <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
             </Button>
+            {fullscreen && !controlsVisible ? <div className={styles['player-activity-catcher']} onMouseMove={showControls} onClick={showControls} onTouchStart={showControls} /> : null}
         </div>
     );
 };
