@@ -7,7 +7,7 @@ const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
 const { Button, MultiselectMenu } = require('stremio/components');
 const { findSubtitle, parseSubtitles } = require('./parseSubtitles');
-const { resolveAllMangaUrl, withSubtitleUrl } = require('./playerProviders');
+const { resolveAllMangaUrl } = require('./playerProviders');
 const styles = require('./styles');
 
 const PROVIDERS = [
@@ -29,6 +29,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
     const [allMangaUrl, setAllMangaUrl] = React.useState(null);
     const [allMangaLoading, setAllMangaLoading] = React.useState(false);
     const playerRef = React.useRef();
+    const playerFrameRef = React.useRef();
     const hideControlsTimerRef = React.useRef();
 
     React.useEffect(() => setProvider('vidking'), [metaId, season, episode]);
@@ -105,9 +106,9 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
             return undefined;
         }
 
-        const playerOrigin = new URL(playerUrls[provider]).origin;
+        const playerOrigin = provider === 'vidking' ? new URL(playerUrls.vidking).origin : null;
         const onMessage = (event) => {
-            if (event.origin !== playerOrigin) {
+            if (provider === 'vidking' ? event.origin !== playerOrigin : event.source !== playerFrameRef.current?.contentWindow) {
                 return;
             }
 
@@ -125,7 +126,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
-    }, [provider, playerUrls, showControls]);
+    }, [provider, playerUrls.vidking, showControls]);
 
     React.useEffect(() => {
         if (provider !== 'allmanga') {
@@ -150,13 +151,8 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
         return () => controller.abort();
     }, [provider, title, type, episode]);
 
-    const selectedTrack = tracks.find(({ id }) => id === selectedTrackId);
-    const activeUrl = provider === 'allmanga' ?
-        allMangaUrl
-        :
-        provider === 'vidsrc' ? withSubtitleUrl(playerUrls.vidsrc, selectedTrack?.url, window.location.origin) : playerUrls[provider];
+    const activeUrl = provider === 'allmanga' ? allMangaUrl : playerUrls[provider];
     const providerLabel = PROVIDERS.find(({ value }) => value === provider)?.label;
-    const hasWyzieSupport = provider !== 'allmanga';
     const usesSubtitleOverlay = provider === 'vidking' || provider === 'videasy';
     const subtitle = React.useMemo(() => findSubtitle(cues, currentTime), [cues, currentTime]);
     const selectTrack = React.useCallback((event) => setSelectedTrackId(event.currentTarget.value), []);
@@ -176,6 +172,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
             />
             {activeUrl ?
                 <iframe
+                    ref={playerFrameRef}
                     key={`${provider}:${activeUrl}`}
                     className={styles['vidking-frame']}
                     src={activeUrl}
@@ -190,7 +187,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
                 </div>
             }
             {
-                hasWyzieSupport && tracks.length > 0 ?
+                usesSubtitleOverlay && tracks.length > 0 ?
                     <select className={classnames(styles['subtitle-select'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} aria-label={t('PLAYER_SUBTITLES_LANGUAGES')} value={selectedTrackId} onChange={selectTrack}>
                         <option value={''}>{t('OFF')}</option>
                         {tracks.map((track) => (
