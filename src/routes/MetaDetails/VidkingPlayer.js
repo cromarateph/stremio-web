@@ -7,7 +7,7 @@ const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
 const { Button, MultiselectMenu } = require('stremio/components');
 const { findSubtitle, parseSubtitles } = require('./parseSubtitles');
-const { resolveAllMangaUrl } = require('./playerProviders');
+const { resolveAllMangaUrl, withSubtitleUrl } = require('./playerProviders');
 const styles = require('./styles');
 
 const PROVIDERS = [
@@ -32,6 +32,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
     const hideControlsTimerRef = React.useRef();
 
     React.useEffect(() => setProvider('vidking'), [metaId, season, episode]);
+    React.useEffect(() => setCurrentTime(0), [provider]);
 
     const showControls = React.useCallback(() => {
         clearTimeout(hideControlsTimerRef.current);
@@ -59,10 +60,6 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
         setTracks([]);
         setSelectedTrackId('');
         setCurrentTime(0);
-        if (provider !== 'vidking') {
-            return undefined;
-        }
-
         const controller = new AbortController();
         const params = new URLSearchParams({ id: metaId, language: 'en' });
         if (Number.isInteger(season) && Number.isInteger(episode)) {
@@ -82,7 +79,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
                 }
             });
         return () => controller.abort();
-    }, [provider, metaId, season, episode]);
+    }, [metaId, season, episode]);
 
     React.useEffect(() => {
         const controller = new AbortController();
@@ -104,11 +101,11 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
     }, [tracks, selectedTrackId]);
 
     React.useEffect(() => {
-        if (provider !== 'vidking') {
+        if (!['vidking', 'videasy'].includes(provider)) {
             return undefined;
         }
 
-        const playerOrigin = new URL(playerUrls.vidking).origin;
+        const playerOrigin = new URL(playerUrls[provider]).origin;
         const onMessage = (event) => {
             if (event.origin !== playerOrigin) {
                 return;
@@ -128,7 +125,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
-    }, [provider, playerUrls.vidking, showControls]);
+    }, [provider, playerUrls, showControls]);
 
     React.useEffect(() => {
         if (provider !== 'allmanga') {
@@ -153,8 +150,14 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
         return () => controller.abort();
     }, [provider, title, type, episode]);
 
-    const activeUrl = provider === 'allmanga' ? allMangaUrl : playerUrls[provider];
+    const selectedTrack = tracks.find(({ id }) => id === selectedTrackId);
+    const activeUrl = provider === 'allmanga' ?
+        allMangaUrl
+        :
+        provider === 'vidsrc' ? withSubtitleUrl(playerUrls.vidsrc, selectedTrack?.url, window.location.origin) : playerUrls[provider];
     const providerLabel = PROVIDERS.find(({ value }) => value === provider)?.label;
+    const hasWyzieSupport = provider !== 'allmanga';
+    const usesSubtitleOverlay = provider === 'vidking' || provider === 'videasy';
     const subtitle = React.useMemo(() => findSubtitle(cues, currentTime), [cues, currentTime]);
     const selectTrack = React.useCallback((event) => setSelectedTrackId(event.currentTarget.value), []);
     const toggleFullscreen = React.useCallback(() => {
@@ -165,7 +168,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
     return (
         <div ref={playerRef} className={classnames(className, styles['vidking-player'])} onMouseMove={showControls} onTouchStart={showControls}>
             <MultiselectMenu
-                className={classnames(styles['provider-menu'], { [styles['controls-hidden']]: provider === 'vidking' && fullscreen && !controlsVisible })}
+                className={classnames(styles['provider-menu'], { [styles['controls-hidden']]: usesSubtitleOverlay && fullscreen && !controlsVisible })}
                 options={PROVIDERS}
                 value={provider}
                 title={providerLabel}
@@ -177,8 +180,8 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
                     className={styles['vidking-frame']}
                     src={activeUrl}
                     title={`Watch ${title} on ${providerLabel}`}
-                    allow={provider === 'vidking' ? 'autoplay; encrypted-media; picture-in-picture' : 'autoplay; encrypted-media; picture-in-picture; fullscreen'}
-                    allowFullScreen={provider !== 'vidking'}
+                    allow={usesSubtitleOverlay ? 'autoplay; encrypted-media; picture-in-picture' : 'autoplay; encrypted-media; picture-in-picture; fullscreen'}
+                    allowFullScreen={!usesSubtitleOverlay}
                     referrerPolicy={'no-referrer'}
                 />
                 :
@@ -187,7 +190,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
                 </div>
             }
             {
-                provider === 'vidking' && tracks.length > 0 ?
+                hasWyzieSupport && tracks.length > 0 ?
                     <select className={classnames(styles['subtitle-select'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} aria-label={t('PLAYER_SUBTITLES_LANGUAGES')} value={selectedTrackId} onChange={selectTrack}>
                         <option value={''}>{t('OFF')}</option>
                         {tracks.map((track) => (
@@ -199,16 +202,16 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
                     :
                     null
             }
-            {provider === 'vidking' && subtitle ? <div className={styles['subtitle-overlay']}>{subtitle}</div> : null}
+            {usesSubtitleOverlay && subtitle ? <div className={styles['subtitle-overlay']}>{subtitle}</div> : null}
             {
-                provider === 'vidking' ?
+                usesSubtitleOverlay ?
                     <Button className={classnames(styles['player-fullscreen-button'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
                         <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
                     </Button>
                     :
                     null
             }
-            {provider === 'vidking' && fullscreen && !controlsVisible ? <div className={styles['player-activity-catcher']} onMouseMove={showControls} onClick={showControls} onTouchStart={showControls} /> : null}
+            {usesSubtitleOverlay && fullscreen && !controlsVisible ? <div className={styles['player-activity-catcher']} onMouseMove={showControls} onClick={showControls} onTouchStart={showControls} /> : null}
         </div>
     );
 };
