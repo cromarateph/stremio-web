@@ -27,6 +27,27 @@
             margin-bottom: 2rem;
         }
 
+        .filtered-results {
+            padding: 1rem;
+
+            .filtered-title {
+                margin-bottom: 1rem;
+                font-size: 1.6rem;
+                font-weight: 500;
+                color: var(--primary-foreground-color);
+            }
+
+            .filtered-items {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+                gap: 1.5rem 1rem;
+
+                .filtered-item {
+                    min-width: 0;
+                }
+            }
+        }
+
         .search-hints-wrapper {
             display: flex;
             align-items: center;

@@ -71,12 +71,12 @@ const Search = () => {
             content = <div className={styles['message-container']}><div className={styles['message-label']}>{FILTER_MESSAGES.empty}</div></div>;
         } else {
             content = (
-                <MetaRow
-                    className={classnames(styles['search-row'], styles['search-row-poster'], 'animation-fade-in')}
-                    title={FILTER_MESSAGES.title}
-                    catalog={{ items: filteredMovies.items }}
-                    itemComponent={MetaItem}
-                />
+                <div className={classnames(styles['filtered-results'], 'animation-fade-in')}>
+                    <div className={styles['filtered-title']}>{FILTER_MESSAGES.title}</div>
+                    <div className={styles['filtered-items']}>
+                        {filteredMovies.items.map((item) => <MetaItem key={item.id} {...item} className={styles['filtered-item']} />)}
+                    </div>
+                </div>
             );
         }
     } else if (query === null) {
