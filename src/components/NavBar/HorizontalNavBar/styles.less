@@ -169,19 +169,36 @@
                     }
                 }
 
-                .clear-filters {
+                .filter-actions {
                     grid-column: 1 / -1;
-                    justify-self: end;
-                    border: 0;
-                    background: none;
-                    color: var(--primary-accent-color);
-                    font: inherit;
-                    font-weight: 600;
-                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 1rem;
 
-                    &:disabled {
-                        cursor: default;
-                        opacity: 0.35;
+                    .clear-filters, .apply-filters {
+                        min-height: 2.5rem;
+                        padding: 0 1rem;
+                        border: 0;
+                        border-radius: 0.65rem;
+                        font: inherit;
+                        font-weight: 600;
+                        cursor: pointer;
+                    }
+
+                    .clear-filters {
+                        background: none;
+                        color: var(--primary-accent-color);
+
+                        &:disabled {
+                            cursor: default;
+                            opacity: 0.35;
+                        }
+                    }
+
+                    .apply-filters {
+                        background-color: var(--primary-accent-color);
+                        color: var(--primary-foreground-color);
                     }
                 }
             }

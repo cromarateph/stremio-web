@@ -16,20 +16,31 @@ const { t } = require('i18next');
 
 const PORTAL_TITLE = 'Aiken\'s Movie Portal';
 const FILTER_NAMES = ['country', 'rating', 'genre', 'year'];
-const GENRES = ['Action', 'Adventure', 'Animation', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'History', 'Horror', 'Music', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'];
-const FILTER_LABELS = { country: 'Country', rating: 'IMDb rating', genre: 'Genre', year: 'Year', anyRating: 'Any rating', anyGenre: 'Any genre', clear: 'Clear filters' };
+const GENRES = [{ id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' }, { id: 35, name: 'Comedy' }, { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' }, { id: 18, name: 'Drama' }, { id: 10751, name: 'Family' }, { id: 14, name: 'Fantasy' }, { id: 36, name: 'History' }, { id: 27, name: 'Horror' }, { id: 10402, name: 'Music' }, { id: 9648, name: 'Mystery' }, { id: 10749, name: 'Romance' }, { id: 878, name: 'Sci-Fi' }, { id: 53, name: 'Thriller' }, { id: 10752, name: 'War' }, { id: 37, name: 'Western' }];
+const FALLBACK_COUNTRIES = [{ iso_3166_1: 'CN', english_name: 'China' }, { iso_3166_1: 'IN', english_name: 'India' }, { iso_3166_1: 'JP', english_name: 'Japan' }, { iso_3166_1: 'PH', english_name: 'Philippines' }, { iso_3166_1: 'KR', english_name: 'South Korea' }, { iso_3166_1: 'GB', english_name: 'United Kingdom' }, { iso_3166_1: 'US', english_name: 'United States' }];
+const FILTER_LABELS = { country: 'Country', rating: 'IMDb rating', genre: 'Genre', year: 'Year', anyCountry: 'Any country', anyRating: 'Any rating', anyGenre: 'Any genre', clear: 'Clear filters', search: 'Search' };
 
 const SearchFilters = () => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const detailsRef = React.useRef();
+    const [countries, setCountries] = React.useState(FALLBACK_COUNTRIES);
+    const [draft, setDraft] = React.useState(() => Object.fromEntries(FILTER_NAMES.map((name) => [name, searchParams.get(name) ?? ''])));
+    const appliedFilters = FILTER_NAMES.map((name) => searchParams.get(name) ?? '').join('\0');
     const setFilter = React.useCallback((event) => {
         const { name, value } = event.currentTarget;
+        setDraft((previous) => ({ ...previous, [name]: value }));
+    }, []);
+    const applyFilters = React.useCallback((event) => {
+        event.preventDefault();
         setSearchParams((previous) => {
             const next = new URLSearchParams(previous);
-            value ? next.set(name, value) : next.delete(name);
+            FILTER_NAMES.forEach((name) => draft[name] ? next.set(name, draft[name]) : next.delete(name));
             return next;
         });
-    }, []);
+        if (detailsRef.current) detailsRef.current.open = false;
+    }, [draft]);
     const clearFilters = React.useCallback(() => {
+        setDraft(Object.fromEntries(FILTER_NAMES.map((name) => [name, ''])));
         setSearchParams((previous) => {
             const next = new URLSearchParams(previous);
             FILTER_NAMES.forEach((name) => next.delete(name));
@@ -37,41 +48,53 @@ const SearchFilters = () => {
         });
     }, []);
     const activeCount = FILTER_NAMES.filter((name) => searchParams.has(name)).length;
+    React.useEffect(() => {
+        setDraft(Object.fromEntries(FILTER_NAMES.map((name) => [name, searchParams.get(name) ?? ''])));
+    }, [appliedFilters]);
+    React.useEffect(() => {
+        fetch('https://db.speedracelight.com/3/configuration/countries')
+            .then((response) => response.ok ? response.json() : Promise.reject())
+            .then((items) => setCountries(items.sort((left, right) => left.english_name.localeCompare(right.english_name))))
+            .catch(() => undefined);
+    }, []);
 
     return (
-        <details className={styles['search-filters']}>
+        <details ref={detailsRef} className={styles['search-filters']}>
             <summary className={styles['filter-button']} aria-label={'Search filters'} title={'Search filters'}>
                 <Icon className={styles['icon']} name={'filters'} />
                 {activeCount > 0 ? <span className={styles['filter-count']}>{activeCount}</span> : null}
             </summary>
-            <div className={styles['filter-panel']}>
+            <form className={styles['filter-panel']} onSubmit={applyFilters}>
                 <label>
                     <span>{FILTER_LABELS.country}</span>
-                    <input name={'country'} list={'search-filter-countries'} value={searchParams.get('country') ?? ''} placeholder={'Any country'} onChange={setFilter} />
-                    <datalist id={'search-filter-countries'}>
-                        {['Australia', 'Brazil', 'Canada', 'China', 'France', 'Germany', 'Hong Kong', 'India', 'Italy', 'Japan', 'Mexico', 'Philippines', 'South Korea', 'Spain', 'Thailand', 'United Kingdom', 'United States'].map((country) => <option key={country} value={country} />)}
-                    </datalist>
+                    <select name={'country'} value={draft.country} onChange={setFilter}>
+                        <option value={''}>{FILTER_LABELS.anyCountry}</option>
+                        {countries.map((country) => <option key={country.iso_3166_1} value={country.iso_3166_1}>{country.english_name}</option>)}
+                    </select>
                 </label>
                 <label>
                     <span>{FILTER_LABELS.rating}</span>
-                    <select name={'rating'} value={searchParams.get('rating') ?? ''} onChange={setFilter}>
+                    <select name={'rating'} value={draft.rating} onChange={setFilter}>
                         <option value={''}>{FILTER_LABELS.anyRating}</option>
                         {[5, 6, 7, 8, 9].map((rating) => <option key={rating} value={rating}>{`${rating}+ stars`}</option>)}
                     </select>
                 </label>
                 <label>
                     <span>{FILTER_LABELS.genre}</span>
-                    <select name={'genre'} value={searchParams.get('genre') ?? ''} onChange={setFilter}>
+                    <select name={'genre'} value={draft.genre} onChange={setFilter}>
                         <option value={''}>{FILTER_LABELS.anyGenre}</option>
-                        {GENRES.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
+                        {GENRES.map((genre) => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
                     </select>
                 </label>
                 <label>
                     <span>{FILTER_LABELS.year}</span>
-                    <input name={'year'} type={'number'} min={'1870'} max={String(new Date().getFullYear() + 5)} value={searchParams.get('year') ?? ''} placeholder={'Any year'} onChange={setFilter} />
+                    <input name={'year'} type={'number'} min={'1870'} max={String(new Date().getFullYear() + 5)} value={draft.year} placeholder={'Any year'} onChange={setFilter} />
                 </label>
-                <button type={'button'} className={styles['clear-filters']} disabled={activeCount === 0} onClick={clearFilters}>{FILTER_LABELS.clear}</button>
-            </div>
+                <div className={styles['filter-actions']}>
+                    <button type={'button'} className={styles['clear-filters']} disabled={activeCount === 0} onClick={clearFilters}>{FILTER_LABELS.clear}</button>
+                    <button type={'submit'} className={styles['apply-filters']}>{FILTER_LABELS.search}</button>
+                </div>
+            </form>
         </details>
     );
 };

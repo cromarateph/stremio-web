@@ -4,9 +4,9 @@ const React = require('react');
 const { useCore } = require('stremio/core');
 const { useModelState } = require('stremio/common');
 
-const useSearch = (queryParams) => {
+const useSearch = (queryParams, disabled = false) => {
     const core = useCore();
-    const query = queryParams.get('search') ?? queryParams.get('query');
+    const query = disabled ? null : queryParams.get('search') ?? queryParams.get('query');
     // TODO: refactor this to be in stremio-core-web
     // React.useEffect(() => {
     //     let timerId = setTimeout(emitSearchEvent, 500);
