@@ -8,15 +8,30 @@ const { default: Icon } = require('@stremio/stremio-icons/react');
 const { withCoreSuspender, getVisibleChildrenRange } = require('stremio/common');
 const { Image, MainNavBars, MetaItem, MetaRow } = require('stremio/components');
 const useSearch = require('./useSearch');
+const matchesSearchFilters = require('./searchFilters');
 const styles = require('./styles');
 const { useSearchParams } = require('react-router-dom');
 
 const THRESHOLD = 100;
+const METADATA_CACHE = new Map();
+const FILTER_MESSAGES = { loading: 'Loading matching titles…', empty: 'No titles match these filters.' };
 
 const Search = () => {
     const [queryParams] = useSearchParams();
     const t = useTranslate();
     const [search, loadSearchRows] = useSearch(queryParams);
+    const filters = React.useMemo(() => ({
+        country: queryParams.get('country') ?? '',
+        rating: queryParams.get('rating') ?? '',
+        genre: queryParams.get('genre') ?? '',
+        year: queryParams.get('year') ?? '',
+    }), [queryParams]);
+    const needsMetadata = Boolean(filters.country || filters.rating || filters.genre);
+    const filterItems = React.useMemo(() => search.catalogs.flatMap((catalog) =>
+        catalog.content?.type === 'Ready' ? catalog.content.content : []
+    ), [search.catalogs]);
+    const [filterMetadata, setFilterMetadata] = React.useState({});
+    const [filtering, setFiltering] = React.useState(false);
     const query = React.useMemo(() => {
         return search.selected !== null ?
             search.selected.extra.reduceRight((query, [name, value]) => {
@@ -46,6 +61,59 @@ const Search = () => {
     React.useLayoutEffect(() => {
         onVisibleRangeChange();
     }, [search.catalogs, onVisibleRangeChange]);
+    React.useEffect(() => {
+        if (!needsMetadata) {
+            setFiltering(false);
+            return;
+        }
+
+        let cancelled = false;
+        setFiltering(true);
+        Promise.all(filterItems.map(async (item) => {
+            const key = `${item.type}:${item.id}`;
+            if (!METADATA_CACHE.has(key)) {
+                if (!['movie', 'series'].includes(item.type) || !/^tt\d+$/.test(item.id)) {
+                    METADATA_CACHE.set(key, null);
+                } else {
+                    try {
+                        const response = await fetch(`https://v3-cinemeta.strem.io/meta/${item.type}/${encodeURIComponent(item.id)}.json`);
+                        METADATA_CACHE.set(key, response.ok ? (await response.json()).meta : null);
+                    } catch (_) {
+                        METADATA_CACHE.set(key, null);
+                    }
+                }
+            }
+            return [key, METADATA_CACHE.get(key)];
+        })).then((entries) => {
+            if (!cancelled) {
+                setFilterMetadata(Object.fromEntries(entries));
+                setFiltering(false);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [filterItems, needsMetadata]);
+    const filteredCatalogs = React.useMemo(() => search.catalogs.map((catalog) => {
+        if (catalog.content?.type !== 'Ready') {
+            return catalog;
+        }
+        return {
+            ...catalog,
+            content: {
+                ...catalog.content,
+                content: catalog.content.content.filter((item) => matchesSearchFilters(
+                    item,
+                    filterMetadata[`${item.type}:${item.id}`],
+                    filters
+                )),
+            },
+        };
+    }), [search.catalogs, filterMetadata, filters]);
+    const hasFilteredResults = filteredCatalogs.some((catalog) =>
+        catalog.content?.type !== 'Ready' || catalog.content.content.length > 0
+    );
     return (
         <MainNavBars className={styles['search-container']} route={'search'} query={query}>
             <div ref={scrollContainerRef} className={styles['search-content']} onScroll={onScroll}>
@@ -85,43 +153,56 @@ const Search = () => {
                                 <div className={styles['message-label']}>{ t.string('STREMIO_TV_SEARCH_NO_ADDONS') }</div>
                             </div>
                             :
-                            search.catalogs.map((catalog, index) => {
-                                switch (catalog.content?.type) {
-                                    case 'Ready': {
-                                        return (
-                                            <MetaRow
-                                                key={index}
-                                                className={classnames(styles['search-row'], styles[`search-row-${catalog.content.content[0].posterShape}`], 'animation-fade-in')}
-                                                catalog={catalog}
-                                                itemComponent={MetaItem}
-                                            />
-                                        );
-                                    }
-                                    case 'Err': {
-                                        if (catalog.content.content !== 'EmptyContent') {
-                                            return (
-                                                <MetaRow
-                                                    key={index}
-                                                    className={classnames(styles['search-row'], 'animation-fade-in')}
-                                                    catalog={catalog}
-                                                    message={catalog.content.content}
-                                                />
-                                            );
+                            filtering ?
+                                <div className={styles['message-container']}>
+                                    <div className={styles['message-label']}>{FILTER_MESSAGES.loading}</div>
+                                </div>
+                                :
+                                !hasFilteredResults ?
+                                    <div className={styles['message-container']}>
+                                        <div className={styles['message-label']}>{FILTER_MESSAGES.empty}</div>
+                                    </div>
+                                    :
+                                    filteredCatalogs.map((catalog, index) => {
+                                        switch (catalog.content?.type) {
+                                            case 'Ready': {
+                                                if (catalog.content.content.length === 0) {
+                                                    return null;
+                                                }
+                                                return (
+                                                    <MetaRow
+                                                        key={index}
+                                                        className={classnames(styles['search-row'], styles[`search-row-${catalog.content.content[0].posterShape}`], 'animation-fade-in')}
+                                                        catalog={catalog}
+                                                        itemComponent={MetaItem}
+                                                    />
+                                                );
+                                            }
+                                            case 'Err': {
+                                                if (catalog.content.content !== 'EmptyContent') {
+                                                    return (
+                                                        <MetaRow
+                                                            key={index}
+                                                            className={classnames(styles['search-row'], 'animation-fade-in')}
+                                                            catalog={catalog}
+                                                            message={catalog.content.content}
+                                                        />
+                                                    );
+                                                }
+                                                return null;
+                                            }
+                                            default: {
+                                                return (
+                                                    <MetaRow.Placeholder
+                                                        key={index}
+                                                        className={classnames(styles['search-row'], styles['search-row-poster'], 'animation-fade-in')}
+                                                        catalog={catalog}
+                                                        title={t.catalogTitle(catalog)}
+                                                    />
+                                                );
+                                            }
                                         }
-                                        return null;
-                                    }
-                                    default: {
-                                        return (
-                                            <MetaRow.Placeholder
-                                                key={index}
-                                                className={classnames(styles['search-row'], styles['search-row-poster'], 'animation-fade-in')}
-                                                catalog={catalog}
-                                                title={t.catalogTitle(catalog)}
-                                            />
-                                        );
-                                    }
-                                }
-                            })
+                                    })
                 }
             </div>
         </MainNavBars>

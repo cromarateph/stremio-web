@@ -6,6 +6,7 @@ const { useModelState } = require('stremio/common');
 
 const useSearch = (queryParams) => {
     const core = useCore();
+    const query = queryParams.get('search') ?? queryParams.get('query');
     // TODO: refactor this to be in stremio-core-web
     // React.useEffect(() => {
     //     let timerId = setTimeout(emitSearchEvent, 500);
@@ -32,7 +33,6 @@ const useSearch = (queryParams) => {
     //     };
     // }, [queryParams.get('search')]);
     const action = React.useMemo(() => {
-        const query = queryParams.get('search') ?? queryParams.get('query');
         if (query?.length > 0) {
             return {
                 action: 'Load',
@@ -50,7 +50,7 @@ const useSearch = (queryParams) => {
                 action: 'Unload'
             };
         }
-    }, [queryParams]);
+    }, [query]);
     const loadRange = React.useCallback((range) => {
         core.transport.dispatch({
             action: 'CatalogsWithExtra',

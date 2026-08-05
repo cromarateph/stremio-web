@@ -69,7 +69,11 @@ const SearchBar = React.memo(({ className, query, active }) => {
         const searchValue = `/search?search=${encodeURIComponent(event.target.value)}`;
         setCurrentQuery(searchValue);
         if (searchInputRef.current && searchValue) {
-            setSearchParams({ search: event.target.value });
+            setSearchParams((previous) => {
+                const next = new URLSearchParams(previous);
+                next.set('search', event.target.value);
+                return next;
+            });
             closeHistory();
         }
     }, []);
