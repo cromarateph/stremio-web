@@ -80,6 +80,10 @@
             position: relative;
             flex: none;
 
+            &[open] {
+                z-index: 100;
+            }
+
             &[open] .filter-button {
                 background-color: var(--primary-accent-color);
                 opacity: 1;
@@ -126,10 +130,10 @@
             }
 
             .filter-panel {
-                position: absolute;
-                z-index: 20;
-                top: calc(100% + 0.75rem);
-                right: 0;
+                position: fixed;
+                z-index: 100;
+                top: calc(var(--horizontal-nav-bar-size) + var(--safe-area-inset-top));
+                right: max(1rem, calc((100vw - 34rem) / 2));
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 1rem;
@@ -282,8 +286,6 @@
             }
 
             .search-filters .filter-panel {
-                position: fixed;
-                top: calc(var(--horizontal-nav-bar-size) + var(--safe-area-inset-top));
                 right: 0.75rem;
                 width: min(24rem, calc(100vw - 1.5rem));
             }
