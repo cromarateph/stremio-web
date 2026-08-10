@@ -6183,6 +6183,7 @@ kbd {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+  overflow: visible;
 }
 .search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG .filtered-header-pJHZq .filtered-title-HyU56 {
   font-size: 1.6rem;
