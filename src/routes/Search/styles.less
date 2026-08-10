@@ -30,11 +30,24 @@
         .filtered-results {
             padding: 1rem;
 
-            .filtered-title {
+            .filtered-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
                 margin-bottom: 1rem;
-                font-size: 1.6rem;
-                font-weight: 500;
-                color: var(--primary-foreground-color);
+
+                .filtered-title {
+                    font-size: 1.6rem;
+                    font-weight: 500;
+                    color: var(--primary-foreground-color);
+                }
+
+                .recent-type-filter {
+                    flex: none;
+                    background-color: var(--overlay-color);
+                    z-index: 2;
+                }
             }
 
             .filtered-items {

@@ -4,19 +4,27 @@ const HIDDEN_CATALOGS = new Set([
     'com.linvo.stremiochannels:top',
     'org.stremio.pubdomainmovies:publicdomainmovies'
 ]);
+const CATALOG_PAGE_SIZE = 50;
+const MAX_CATALOG_PAGES = 20;
 
 const isBoardCatalogVisible = (catalog) => !HIDDEN_CATALOGS.has(`${catalog.addon?.manifest.id}:${catalog.id}`);
 
-const loadRecentReleases = async ({ fetchImpl = fetch, now = new Date(), signal } = {}) => {
+const loadRecentReleases = async ({ fetchImpl = fetch, now = new Date(), signal, all = false } = {}) => {
     const year = now.getUTCFullYear();
-    const responses = await Promise.all(['movie', 'series'].map((type) =>
-        fetchImpl(`https://v3-cinemeta.strem.io/catalog/${type}/year/genre=${year}.json`, { signal })
-    ));
-    if (responses.some(({ ok }) => !ok)) {
-        throw new Error('Recent releases are unavailable');
-    }
-
-    const catalogs = await Promise.all(responses.map((response) => response.json()));
+    const catalogs = await Promise.all(['movie', 'series'].map(async (type) => {
+        const metas = [];
+        // ponytail: cap remote pagination; raise this if Cinemeta exceeds 1,000 titles in one year.
+        for (let page = 0; page < (all ? MAX_CATALOG_PAGES : 1); page++) {
+            const skip = page * CATALOG_PAGE_SIZE;
+            const extra = `genre=${year}${skip > 0 ? `&skip=${skip}` : ''}`;
+            const response = await fetchImpl(`https://v3-cinemeta.strem.io/catalog/${type}/year/${extra}.json`, { signal });
+            if (!response.ok) throw new Error('Recent releases are unavailable');
+            const { metas: pageMetas = [] } = await response.json();
+            if (pageMetas.length === 0) break;
+            metas.push(...pageMetas);
+        }
+        return { metas };
+    }));
     const nowTime = now.getTime();
     return catalogs.flatMap(({ metas = [] }) => metas)
         .map((meta) => {

@@ -7,17 +7,12 @@ test('hides YouTube channels and public-domain movies', () => {
 });
 
 test('combines released movies and series newest first', async () => {
-    const fetchImpl = jest.fn()
-        .mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ metas: [
+    const fetchImpl = jest.fn(async (url) => ({
+        ok: true,
+        json: async () => url.includes('skip=50') ? { metas: [] } : url.includes('/movie/') ? { metas: [
                 { id: 'tt1', type: 'movie', name: 'Movie', released: '2026-08-01T00:00:00.000Z' },
                 { id: 'tt2', type: 'movie', name: 'Future Movie', released: '2026-09-01T00:00:00.000Z' }
-            ] })
-        })
-        .mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ metas: [{
+            ] } : { metas: [{
                 id: 'tt3',
                 type: 'series',
                 name: 'Series',
@@ -26,11 +21,12 @@ test('combines released movies and series newest first', async () => {
                     { id: 'tt3:1:1', released: '2026-08-05T00:00:00.000Z' },
                     { id: 'tt3:1:2', released: '2026-08-20T00:00:00.000Z' }
                 ]
-            }] })
-        });
+            }] }
+    }));
 
-    await expect(loadRecentReleases({ fetchImpl, now: new Date('2026-08-10T00:00:00.000Z') })).resolves.toEqual([
+    await expect(loadRecentReleases({ fetchImpl, now: new Date('2026-08-10T00:00:00.000Z'), all: true })).resolves.toEqual([
         expect.objectContaining({ name: 'Series', posterShape: 'poster', href: '/detail/series/tt3/tt3:1:1' }),
         expect.objectContaining({ name: 'Movie', posterShape: 'poster', href: '/detail/movie/tt1/tt1' })
     ]);
+    expect(fetchImpl).toHaveBeenCalledWith(expect.stringContaining('genre=2026&skip=50'), expect.anything());
 });

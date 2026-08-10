@@ -12,6 +12,7 @@ const useContinueWatchingPreview = require('./useContinueWatchingPreview');
 const styles = require('./styles');
 
 const THRESHOLD = 5;
+const RECENT_RELEASES_DEEP_LINKS = { discover: '/search?recent=1' };
 
 const Board = () => {
     const t = useTranslate();
@@ -59,10 +60,10 @@ const Board = () => {
                 <div ref={scrollContainerRef} className={styles['board-content']} onScroll={onScroll}>
                     {
                         recentReleases.type === 'Loading' ?
-                            <MetaRow.Placeholder className={classnames(styles['board-row'], styles['board-row-poster'], 'animation-fade-in')} title={'Most Recent Releases'} />
+                            <MetaRow.Placeholder className={classnames(styles['board-row'], styles['board-row-poster'], 'animation-fade-in')} title={'Most Recent Releases'} deepLinks={RECENT_RELEASES_DEEP_LINKS} />
                             :
                             recentReleases.items.length > 0 ?
-                                <MetaRow className={classnames(styles['board-row'], styles['board-row-poster'], 'animation-fade-in')} title={'Most Recent Releases'} catalog={recentReleases} itemComponent={MetaItem} />
+                                <MetaRow className={classnames(styles['board-row'], styles['board-row-poster'], 'animation-fade-in')} title={'Most Recent Releases'} catalog={{ ...recentReleases, deepLinks: RECENT_RELEASES_DEEP_LINKS }} itemComponent={MetaItem} />
                                 :
                                 null
                     }
