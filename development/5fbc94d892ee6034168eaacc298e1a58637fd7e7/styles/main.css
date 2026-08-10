@@ -6177,11 +6177,22 @@ kbd {
 .search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG {
   padding: 1rem;
 }
-.search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG .filtered-title-HyU56 {
+.search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG .filtered-header-pJHZq {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+.search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG .filtered-header-pJHZq .filtered-title-HyU56 {
   font-size: 1.6rem;
   font-weight: 500;
   color: var(--primary-foreground-color);
+}
+.search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG .filtered-header-pJHZq .recent-type-filter-i4zbL {
+  flex: none;
+  background-color: var(--overlay-color);
+  z-index: 2;
 }
 .search-container-uXEFf .search-content-LX6un .filtered-results-cWZqG .filtered-items-w8w3H {
   display: grid;
