@@ -204,6 +204,11 @@ describe('routesRegexp', () => {
                 .toEqual(['/metadetails/1/2/3', '1', '2', '3']);
         });
 
+        it('match /detail/1/2/3', async () => {
+            expect(Array.from('/detail/1/2/3'.match(routesRegexp.metadetails.regexp)))
+                .toEqual(['/detail/1/2/3', '1', '2', '3']);
+        });
+
         it('not match /metadetails', async () => {
             expect('/metadetails'.match(routesRegexp.metadetails.regexp))
                 .toBe(null);

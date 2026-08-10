@@ -3,12 +3,13 @@
 require('spatial-navigation-polyfill');
 const React = require('react');
 const { useTranslation } = require('react-i18next');
-const { useNavigate } = require('react-router');
+const { useLocation, useNavigate } = require('react-router');
 const { useCore } = require('stremio/core');
 const { Routes } = require('stremio-router');
 const { Chromecast, ServicesProvider, GamepadProvider } = require('stremio/services');
 const { FullscreenProvider, ToastProvider, TooltipProvider, ShortcutsProvider, DiscordProvider, CONSTANTS, useBinaryState, useProfile, withCoreSuspender, onFileDrop, usePlatform } = require('stremio/common');
 const focusFirstMetaItemOnArrow = require('stremio/common/focusFirstMetaItemOnArrow');
+const routesRegexp = require('stremio/common/routesRegexp');
 const ServicesToaster = require('./ServicesToaster');
 const SearchParamsHandler = require('./SearchParamsHandler');
 const DeepLinkHandler = require('./DeepLinkHandler');
@@ -25,6 +26,7 @@ const App = () => {
     const profile = useProfile();
     const { i18n, t } = useTranslation();
     const { shell } = usePlatform();
+    const location = useLocation();
     const navigate = useNavigate();
     const [gamepadSupportEnabled, setGamepadSupportEnabled] = React.useState(false);
     const [aikenGreetingKey, setAikenGreetingKey] = React.useState(0);
@@ -216,7 +218,7 @@ const App = () => {
                                     <DeepLinkHandler />
                                     <UpdaterBanner className={styles['updater-banner-container']} />
                                     <ProtectedRoutes />
-                                    <div className={styles['aiken-avatar-container']}>
+                                    {!routesRegexp.metadetails.regexp.test(location.pathname) && <div className={styles['aiken-avatar-container']}>
                                         {
                                             aikenGreetingKey > 0 &&
                                                 <div
@@ -244,7 +246,7 @@ const App = () => {
                                                 alt={''}
                                             />
                                         </button>
-                                    </div>
+                                    </div>}
                                 </DiscordProvider>
                             </FullscreenProvider>
                         </ShortcutsProvider>
