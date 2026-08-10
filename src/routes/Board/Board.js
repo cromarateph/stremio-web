@@ -6,6 +6,7 @@ const debounce = require('lodash.debounce');
 const useTranslate = require('stremio/common/useTranslate');
 const { useNotifications, withCoreSuspender, getVisibleChildrenRange } = require('stremio/common');
 const { ContinueWatchingItem, EventModal, MainNavBars, MetaItem, MetaRow } = require('stremio/components');
+const { isBoardCatalogVisible, loadRecentReleases } = require('./boardCatalogs');
 const useBoard = require('./useBoard');
 const useContinueWatchingPreview = require('./useContinueWatchingPreview');
 const styles = require('./styles');
@@ -17,7 +18,12 @@ const Board = () => {
     const continueWatchingPreview = useContinueWatchingPreview();
     const [board, loadBoardRows] = useBoard();
     const notifications = useNotifications();
-    const boardCatalogsOffset = continueWatchingPreview.items.length > 0 ? 1 : 0;
+    const [recentReleases, setRecentReleases] = React.useState({ type: 'Loading', items: [] });
+    const visibleCatalogs = React.useMemo(() => board.catalogs
+        .map((catalog, index) => ({ catalog, index }))
+        .filter(({ catalog }) => isBoardCatalogVisible(catalog)), [board.catalogs]);
+    const showRecentReleases = recentReleases.type === 'Loading' || recentReleases.items.length > 0;
+    const boardCatalogsOffset = (showRecentReleases ? 1 : 0) + (continueWatchingPreview.items.length > 0 ? 1 : 0);
     const scrollContainerRef = React.useRef();
     const onVisibleRangeChange = React.useCallback(() => {
         const range = getVisibleChildrenRange(scrollContainerRef.current);
@@ -26,22 +32,40 @@ const Board = () => {
         }
 
         const start = Math.max(0, range.start - boardCatalogsOffset - THRESHOLD);
-        const end = range.end - boardCatalogsOffset + THRESHOLD;
+        const end = Math.min(visibleCatalogs.length - 1, range.end - boardCatalogsOffset + THRESHOLD);
         if (end < start) {
             return;
         }
 
-        loadBoardRows({ start, end });
-    }, [boardCatalogsOffset]);
+        loadBoardRows({ start: visibleCatalogs[start].index, end: visibleCatalogs[end].index });
+    }, [boardCatalogsOffset, visibleCatalogs]);
     const onScroll = React.useCallback(debounce(onVisibleRangeChange, 250), [onVisibleRangeChange]);
     React.useLayoutEffect(() => {
         onVisibleRangeChange();
-    }, [board.catalogs, onVisibleRangeChange]);
+    }, [visibleCatalogs, onVisibleRangeChange]);
+    React.useEffect(() => {
+        const controller = new AbortController();
+        loadRecentReleases({ signal: controller.signal })
+            .then((items) => setRecentReleases({ type: 'Ready', items }))
+            .catch((error) => {
+                if (error.name !== 'AbortError') setRecentReleases({ type: 'Err', items: [] });
+            });
+        return () => controller.abort();
+    }, []);
     return (
         <div className={styles['board-container']}>
             <EventModal />
             <MainNavBars className={styles['board-content-container']} route={'board'}>
                 <div ref={scrollContainerRef} className={styles['board-content']} onScroll={onScroll}>
+                    {
+                        recentReleases.type === 'Loading' ?
+                            <MetaRow.Placeholder className={classnames(styles['board-row'], styles['board-row-poster'], 'animation-fade-in')} title={'Most Recent Releases'} />
+                            :
+                            recentReleases.items.length > 0 ?
+                                <MetaRow className={classnames(styles['board-row'], styles['board-row-poster'], 'animation-fade-in')} title={'Most Recent Releases'} catalog={recentReleases} itemComponent={MetaItem} />
+                                :
+                                null
+                    }
                     {
                         continueWatchingPreview.items.length > 0 ?
                             <MetaRow
@@ -54,7 +78,7 @@ const Board = () => {
                             :
                             null
                     }
-                    {board.catalogs.map((catalog, index) => {
+                    {visibleCatalogs.map(({ catalog, index }) => {
                         switch (catalog.content?.type) {
                             case 'Ready': {
                                 return (
