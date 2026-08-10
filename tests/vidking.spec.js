@@ -41,10 +41,13 @@ describe('getVidkingStream', () => {
         const playerSource = fs.readFileSync('src/routes/MetaDetails/VidkingPlayer.js', 'utf8');
 
         expect(playerSource).toContain('MultiselectMenu');
+        expect(playerSource).toContain('React.useState(\'vidsrc\')');
+        expect(playerSource).toContain('setProvider(\'vidsrc\')');
         expect(playerSource).toContain("provider === 'vidking' || provider === 'videasy'");
         expect(playerSource).toContain("provider === 'vidking' ? event.origin !== playerOrigin : event.source !== playerFrameRef.current?.contentWindow");
         expect(playerSource).toContain('subtitle-select');
         expect(playerSource).toContain('player-fullscreen-button');
+        expect(playerSource).not.toContain('usesSubtitleOverlay ?\n                    <Button');
         expect(playerSource).not.toContain('withWyzieSubtitle');
     });
 

@@ -19,7 +19,7 @@ const PROVIDERS = [
 
 const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, episode }) => {
     const { t } = useTranslation();
-    const [provider, setProvider] = React.useState('vidking');
+    const [provider, setProvider] = React.useState('vidsrc');
     const [tracks, setTracks] = React.useState([]);
     const [selectedTrackId, setSelectedTrackId] = React.useState('');
     const [cues, setCues] = React.useState([]);
@@ -32,7 +32,7 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
     const playerFrameRef = React.useRef();
     const hideControlsTimerRef = React.useRef();
 
-    React.useEffect(() => setProvider('vidking'), [metaId, season, episode]);
+    React.useEffect(() => setProvider('vidsrc'), [metaId, season, episode]);
     React.useEffect(() => setCurrentTime(0), [provider]);
 
     const showControls = React.useCallback(() => {
@@ -200,14 +200,9 @@ const VidkingPlayer = ({ className, playerUrls, title, metaId, type, season, epi
                     null
             }
             {usesSubtitleOverlay && subtitle ? <div className={styles['subtitle-overlay']}>{subtitle}</div> : null}
-            {
-                usesSubtitleOverlay ?
-                    <Button className={classnames(styles['player-fullscreen-button'], { [styles['controls-hidden']]: fullscreen && !controlsVisible })} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
-                        <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
-                    </Button>
-                    :
-                    null
-            }
+            <Button className={classnames(styles['player-fullscreen-button'], { [styles['controls-hidden']]: usesSubtitleOverlay && fullscreen && !controlsVisible })} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={toggleFullscreen}>
+                <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
+            </Button>
             {usesSubtitleOverlay && fullscreen && !controlsVisible ? <div className={styles['player-activity-catcher']} onMouseMove={showControls} onClick={showControls} onTouchStart={showControls} /> : null}
         </div>
     );
