@@ -85,12 +85,6 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
         }
     }, [saveScrollPosition, onVideoSelect]);
 
-    React.useEffect(() => {
-        if (typeof onVideoSelect === 'function' && videosForSeason.length > 0) {
-            onVideoSelect(videosForSeason[0]);
-        }
-    }, [videosForSeason, onVideoSelect]);
-
     // Restore scroll on mount (before paint), consume immediately
     React.useLayoutEffect(() => {
         if (savedScrollTop > 0 && videosContainerRef.current) {

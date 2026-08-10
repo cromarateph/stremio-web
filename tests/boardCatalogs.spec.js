@@ -25,7 +25,7 @@ test('combines released movies and series newest first', async () => {
     }));
 
     await expect(loadRecentReleases({ fetchImpl, now: new Date('2026-08-10T00:00:00.000Z'), all: true })).resolves.toEqual([
-        expect.objectContaining({ name: 'Series', posterShape: 'poster', href: '/detail/series/tt3/tt3:1:1' }),
+        expect.objectContaining({ name: 'Series', posterShape: 'poster', href: '/detail/series/tt3' }),
         expect.objectContaining({ name: 'Movie', posterShape: 'poster', href: '/detail/movie/tt1/tt1' })
     ]);
     expect(fetchImpl).toHaveBeenCalledWith(expect.stringContaining('genre=2026&skip=50'), expect.anything());

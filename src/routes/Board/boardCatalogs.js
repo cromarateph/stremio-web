@@ -33,13 +33,12 @@ const loadRecentReleases = async ({ fetchImpl = fetch, now = new Date(), signal,
                 .filter(({ time }) => Number.isFinite(time) && time <= nowTime)
                 .sort((a, b) => b.time - a.time);
             const releasedAt = Math.max(...[Date.parse(meta.released), releasedVideos[0]?.time].filter(Number.isFinite));
-            const videoId = meta.type === 'movie' ? meta.id : releasedVideos[0]?.video.id;
             return {
                 releasedAt,
                 item: {
                     ...meta,
                     posterShape: 'poster',
-                    href: `/detail/${meta.type}/${meta.id}${videoId ? `/${videoId}` : ''}`
+                    href: `/detail/${meta.type}/${meta.id}${meta.type === 'movie' ? `/${meta.id}` : ''}`
                 }
             };
         })
