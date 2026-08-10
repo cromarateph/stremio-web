@@ -12,7 +12,7 @@ const useContinueWatchingPreview = require('./useContinueWatchingPreview');
 const styles = require('./styles');
 
 const THRESHOLD = 5;
-const RECENT_RELEASES_DEEP_LINKS = { discover: '/search?recent=1' };
+const RECENT_RELEASES_DEEP_LINKS = { discover: '#/search?recent=1' };
 
 const Board = () => {
     const t = useTranslate();
